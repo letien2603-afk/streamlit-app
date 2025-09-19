@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# Hide Streamlit UI
+# Hide Streamlit UI elements
 st.markdown("""
 <style>
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -44,57 +44,50 @@ try:
 except ImportError:
     pyxlsb_installed = False
 
+# 3️⃣ Preview first 10 rows (fast)
 df_preview = pd.DataFrame()
-
-# 3️⃣ Preview
 if st.session_state.uploaded_file is not None:
     uploaded_file = st.session_state.uploaded_file
-    if uploaded_file.name.endswith(".xlsb"):
-        if pyxlsb_installed:
-            try:
-                # Only read headers (very fast)
-                df_preview = pd.read_excel(uploaded_file, engine="pyxlsb", nrows=0)
-                st.write("Columns detected:", list(df_preview.columns))
-                st.info("Preview of XLSB data is disabled for speed. Load full data to filter.")
-            except Exception as e:
-                st.error(f"Error reading XLSB headers: {e}")
-        else:
-            st.error("Missing dependency 'pyxlsb'. Please install it.")
-    else:
-        try:
-            df_preview = pd.read_excel(uploaded_file, nrows=10, dtype=str)
-            st.write("Preview (first 10 rows):")
-            st.dataframe(df_preview)
-        except Exception as e:
-            st.error(f"Error reading XLSX preview: {e}")
-
-# 4️⃣ Load full data
-if st.session_state.uploaded_file is not None and st.button("Load full data for filtering"):
     try:
-        uploaded_file = st.session_state.uploaded_file
-        if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
-            st.session_state.full_df = pd.read_excel(uploaded_file, engine="pyxlsb", dtype=str)
+        if uploaded_file.name.endswith(".xlsb"):
+            if pyxlsb_installed:
+                df_preview = pd.read_excel(uploaded_file, engine="pyxlsb", nrows=10, dtype=str)
+            else:
+                st.error("Missing dependency 'pyxlsb'. Please install it: pip install pyxlsb")
         else:
-            st.session_state.full_df = pd.read_excel(uploaded_file, dtype=str)
-        st.success("Full data loaded! You can now filter/search.")
+            df_preview = pd.read_excel(uploaded_file, nrows=10, dtype=str)
     except Exception as e:
-        st.error(f"Error loading full data: {e}")
+        st.error(f"Error reading file: {e}")
 
-# 5️⃣ Multi-value filtering
-if st.session_state.full_df is not None:
-    df = st.session_state.full_df
+if not df_preview.empty:
+    st.write("Preview (first 10 rows):")
+    st.dataframe(df_preview)
 
-    # Select column to filter
-    col_to_filter = st.selectbox("Select column to filter:", options=df.columns)
+# 4️⃣ Filter box (applies to full dataset)
+search_input = st.text_input("Enter value(s) to filter (comma-separated):")
 
-    # Multi-select values in that column
-    unique_values = df[col_to_filter].dropna().unique()
-    selected_values = st.multiselect("Select value(s) to filter:", options=unique_values)
+if search_input and st.session_state.uploaded_file is not None:
+    terms = [t.strip() for t in search_input.split(",") if t.strip()]
 
-    if selected_values:
-        filtered_df = df[df[col_to_filter].isin(selected_values)]
-        st.write(f"Found {len(filtered_df)} matching rows:")
-        st.dataframe(filtered_df.reset_index(drop=True))
-    else:
-        st.write("No filter applied yet. Showing full dataset.")
-        st.dataframe(df.head(10))  # show first 10 rows as default
+    # Read entire dataset only once and store in session_state
+    if st.session_state.full_df is None:
+        try:
+            if st.session_state.uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
+                st.session_state.full_df = pd.read_excel(st.session_state.uploaded_file, engine="pyxlsb", dtype=str)
+            else:
+                st.session_state.full_df = pd.read_excel(st.session_state.uploaded_file, dtype=str)
+        except Exception as e:
+            st.error(f"Error reading full file for filtering: {e}")
+            st.stop()
+
+    df_full = st.session_state.full_df
+
+    # Filter rows containing any of the terms in any column
+    mask = df_full.apply(
+        lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
+        axis=1
+    )
+    filtered_df = df_full[mask]
+
+    st.write(f"Found {len(filtered_df)} matching rows:")
+    st.dataframe(filtered_df.reset_index(drop=True))
