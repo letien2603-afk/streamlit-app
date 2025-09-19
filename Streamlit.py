@@ -42,7 +42,7 @@ st.success("Welcome!")
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
-uploaded_file = st.file_uploader("Upload your Parquet file", type=["parquet"])
+uploaded_file = st.file_uploader("Upload the ATF Parquet file", type=["parquet"])
 
 if uploaded_file is not None:
     try:
@@ -54,7 +54,7 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Full ATF Access (moved above Filter Section 1)
+    # Full ATF Access
     # -----------------------------
     st.subheader("Full ATF Access")
     if st.button("Show Google Drive Link for Full ATF"):
