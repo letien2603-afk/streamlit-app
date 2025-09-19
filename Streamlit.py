@@ -2,6 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
+
+st.set_page_config(
+    page_title="ATF App",                 
+    layout="wide"                    
+)
+
 # -----------------------------
 # Hide Streamlit UI elements and remove top padding
 # -----------------------------
