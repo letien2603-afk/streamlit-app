@@ -23,7 +23,7 @@ if st.session_state.logged_in:
     st.success("Welcome!")
 
     # Load CSV
-    df = pd.read_csv("ATF_Streamlit.csv")
+    df = pd.read_csv("ATF_Streamlit.csv", dtype=str))
 
     # Search input
     search_terms = st.text_input("Enter search keywords (comma-separated):")
