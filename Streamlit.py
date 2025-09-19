@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
+from pyxlsb import open_workbook
 
-# Hide Streamlit UI elements
 st.markdown("""
 <style>
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -14,12 +14,8 @@ PASSWORD = "myStrongPassword123"
 
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
-if "uploaded_file" not in st.session_state:
-    st.session_state.uploaded_file = None
-if "full_df" not in st.session_state:
-    st.session_state.full_df = None
 
-# Password
+# Password check
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
@@ -32,52 +28,32 @@ if not st.session_state.logged_in:
 
 st.success("Welcome!")
 
-# File upload
-uploaded_file = st.file_uploader("Upload XLSB/XLSX file", type=["xlsb", "xlsx"])
-if uploaded_file is not None:
-    st.session_state.uploaded_file = uploaded_file
+uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
+search_input = st.text_input("Enter Order ID(s) to filter (comma-separated):")
 
-pyxlsb_installed = True
-try:
-    import pyxlsb
-except ImportError:
-    pyxlsb_installed = False
+if st.button("Filter") and uploaded_file is not None and search_input:
+    search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
+    matched_rows = []
 
-# Filter input (only Order ID & GA08:SO TranID)
-search_input = st.text_input("Enter value(s) to filter (comma-separated):")
+    try:
+        with open_workbook(uploaded_file) as wb:
+            sheet = wb.get_sheet(1)  # first sheet
+            header = [cell.v for cell in next(sheet.rows())]  # read header
+            # get column indexes for filtering
+            order_id_idx = header.index("Order ID")
+            so_tranid_idx = header.index("GA08:SO TranID")
 
-display_df = pd.DataFrame()  # empty by default
+            for row in sheet.rows():
+                row_values = [cell.v for cell in row]
+                if any(str(row_values[order_id_idx]) in search_terms or str(row_values[so_tranid_idx]) in search_terms):
+                    matched_rows.append(row_values)
 
-if st.button("Filter") and search_input and uploaded_file is not None:
-    terms = [t.strip() for t in search_input.split(",") if t.strip()]
+        if matched_rows:
+            df_result = pd.DataFrame(matched_rows, columns=header)
+            st.write(f"Found {len(df_result)} matching rows:")
+            st.dataframe(df_result)
+        else:
+            st.warning("No matching rows found.")
 
-    # Load full dataset only once
-    if st.session_state.full_df is None:
-        try:
-            if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
-                st.session_state.full_df = pd.read_excel(uploaded_file, engine="pyxlsb", dtype=str)
-            else:
-                st.session_state.full_df = pd.read_excel(uploaded_file, dtype=str)
-        except Exception as e:
-            st.error(f"Error reading full file: {e}")
-            st.stop()
-
-    df_full = st.session_state.full_df
-
-    # Only filter on specific columns
-    filter_columns = ["Order ID", "GA08:SO TranID"]
-    missing_cols = [col for col in filter_columns if col not in df_full.columns]
-    if missing_cols:
-        st.error(f"Missing columns in the dataset: {missing_cols}")
-    else:
-        mask = pd.Series(False, index=df_full.index)
-        for term in terms:
-            mask |= df_full[filter_columns].astype(str).apply(lambda col: col.str.contains(term, case=False, na=False)).any(axis=1)
-
-        filtered_df = df_full[mask]
-        display_df = filtered_df
-        st.write(f"Found {len(filtered_df)} matching rows:")
-
-# Show filtered table only
-if not display_df.empty:
-    st.dataframe(display_df.reset_index(drop=True))
+    except Exception as e:
+        st.error(f"Error processing XLSB: {e}")
