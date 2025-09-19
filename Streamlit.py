@@ -11,6 +11,13 @@ footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
 </style>
+
+/* Remove top padding / margin */
+.block-container {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+}
+</style>
 """, unsafe_allow_html=True)
 
 # -----------------------------
