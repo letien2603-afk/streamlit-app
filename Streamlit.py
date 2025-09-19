@@ -48,7 +48,7 @@ st.success("Welcome!")
 uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
 
 # -----------------------------
-# Cache reading XLSB filter columns
+# Read only filter columns to find matching rows
 # -----------------------------
 @st.cache_data
 def read_filter_columns(file_bytes, filter_cols):
@@ -67,7 +67,7 @@ def read_filter_columns(file_bytes, filter_cols):
     return df_filter, header
 
 # -----------------------------
-# Cache reading matched rows fully
+# Read all columns for matched rows
 # -----------------------------
 @st.cache_data
 def read_matched_rows(file_bytes, matched_indices, all_columns):
@@ -95,7 +95,7 @@ if uploaded_file is not None:
     try:
         df_filter, all_columns = read_filter_columns(file_bytes, filter_columns)
 
-        search_input = st.text_input("Enter Order ID(s) to filter (comma-separated):")
+        search_input = st.text_input("Enter Order ID(s) or Transaction ID(s) to filter (comma-separated):")
 
         if st.button("Filter") and search_input:
             search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
@@ -112,8 +112,13 @@ if uploaded_file is not None:
 
                 df_matched = read_matched_rows(file_bytes, matched_indices, all_columns)
 
-                st.write(f"Showing {len(df_matched)} matched rows (all columns):")
-                st.dataframe(df_matched.reset_index(drop=True))
+                # Display matched rows (all columns)
+                st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
+
+                # Optional: allow download
+                csv_data = df_matched.to_csv(index=False).encode('utf-8')
+                st.download_button("Download matched rows as CSV", csv_data, "matched_rows.csv", "text/csv")
+
             else:
                 st.warning("No matching rows found.")
 
