@@ -50,11 +50,13 @@ if uploaded_file is not None:
     # Section 1: Filter by IDs
     # -----------------------------
     st.subheader("Filter Section 1: IDs")
-    search_input_ids = st.text_input(
-        "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
-    )
-
-    if st.button("Filter by IDs"):
+    with st.form("form_ids"):
+        search_input_ids = st.text_input(
+            "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
+        )
+        submit_ids = st.form_submit_button("Filter Section 1")
+    
+    if submit_ids:
         if search_input_ids.strip() == "":
             st.warning("Please enter at least one search term for Section 1.")
         else:
@@ -94,11 +96,13 @@ if uploaded_file is not None:
     # Section 2: Filter by Names / Products
     # -----------------------------
     st.subheader("Filter Section 2: Names / Products")
-    search_input_names = st.text_input(
-        "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
-    )
+    with st.form("form_names"):
+        search_input_names = st.text_input(
+            "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
+        )
+        submit_names = st.form_submit_button("Filter Section 2")
 
-    if st.button("Filter by Names/Products"):
+    if submit_names:
         if search_input_names.strip() == "":
             st.warning("Please enter at least one search term for Section 2.")
         else:
