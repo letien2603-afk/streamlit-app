@@ -41,7 +41,7 @@ if st.session_state.logged_in:
     st.success("Welcome!")
 
     # ===== Load CSV from Google Drive =====
-    file_id = "1d90WrGEycbzltBbwpcjeksjA9CkPf0n9"
+    file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
     csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
     try:
