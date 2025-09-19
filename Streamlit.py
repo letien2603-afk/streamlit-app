@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 from pyxlsb import open_workbook
+from io import BytesIO
 
 st.markdown("""
 <style>
@@ -15,7 +16,7 @@ PASSWORD = "myStrongPassword123"
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# Password check
+# Password
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
@@ -36,15 +37,25 @@ if st.button("Filter") and uploaded_file is not None and search_input:
     matched_rows = []
 
     try:
-        with open_workbook(uploaded_file) as wb:
-            sheet = wb.get_sheet(1)  # first sheet
-            header = [cell.v for cell in next(sheet.rows())]  # read header
-            # get column indexes for filtering
-            order_id_idx = header.index("Order ID")
-            so_tranid_idx = header.index("GA08:SO TranID")
+        # Convert UploadedFile to BytesIO
+        file_bytes = BytesIO(uploaded_file.read())
 
+        with open_workbook(file_bytes) as wb:
+            sheet = wb.get_sheet(1)  # first sheet
+            header_row = next(sheet.rows())
+            header = [cell.v for cell in header_row]
+
+            # Get indexes for filtering columns
+            try:
+                order_id_idx = header.index("Order ID")
+                so_tranid_idx = header.index("GA08:SO TranID")
+            except ValueError as e:
+                st.error(f"Column not found: {e}")
+                st.stop()
+
+            # Iterate rows and collect matches
             for row in sheet.rows():
-                row_values = [cell.v for cell in row]
+                row_values = [cell.v if cell.v is not None else "" for cell in row]
                 if any(str(row_values[order_id_idx]) in search_terms or str(row_values[so_tranid_idx]) in search_terms):
                     matched_rows.append(row_values)
 
