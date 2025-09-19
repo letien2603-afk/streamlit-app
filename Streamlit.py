@@ -40,8 +40,15 @@ if not st.session_state.logged_in:
 if st.session_state.logged_in:
     st.success("Welcome!")
 
-    # Load CSV
-    df = pd.read_csv("ATF_Streamlit.csv", dtype=str)
+    # ===== Load CSV from Google Drive =====
+    # Use the "shareable link" of your Google Drive CSV file
+    # Example link: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
+    # Convert to direct download link:
+    file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
+    csv_url = f"https://drive.google.com/uc?id={file_id}"
+
+    # Read CSV
+    df = pd.read_csv(csv_url, dtype=str)
 
     # Search input
     search_terms = st.text_input("Enter search keywords (comma-separated):")
