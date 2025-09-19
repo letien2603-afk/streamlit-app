@@ -23,7 +23,7 @@ header {visibility: hidden;}
 # -----------------------------
 # Password protection
 # -----------------------------
-PASSWORD = "myStrongPassword123"
+PASSWORD = "Callidus123"
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
