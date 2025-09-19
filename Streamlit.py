@@ -10,27 +10,6 @@ hide_streamlit_style = """
     }
     </style>
 """
-hide_streamlit_style = """
-<style>
-/* Hide footer including "Manage app" */
-footer[data-testid="stAppFooter"] {
-    visibility: hidden;
-    height: 0px;
-}
-
-/* Hide hamburger menu */
-#MainMenu {visibility: hidden;}
-
-/* Hide header */
-header {visibility: hidden;}
-</style>
-"""
-
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
-
-
-
 # Set your password here
 PASSWORD = "myStrongPassword123"
 
