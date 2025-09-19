@@ -45,14 +45,13 @@ if st.session_state.logged_in:
     csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
     try:
-        # Robust CSV reader to handle malformed lines or weird delimiters
+        # Robust CSV reader using on_bad_lines for modern pandas
         df = pd.read_csv(
             csv_url,
             dtype=str,
-            sep=",",            # Change to ";" or "\t" if needed
-            engine="python",    # More tolerant parser than default C engine
-            error_bad_lines=False,  # Skip lines with too many/few fields
-            warn_bad_lines=True      # Show warning for skipped lines
+            sep=",",             # Change to ";" or "\t" if needed
+            engine="python",     # More tolerant parser
+            on_bad_lines="skip"  # Skip malformed lines
         )
     except Exception as e:
         st.error(f"Error loading CSV: {e}")
