@@ -1,10 +1,12 @@
 import streamlit as st
 import os
 
-PASSWORD = os.getenv("APP_PASSWORD", "default123")
+# Read password from secrets
+PASSWORD = st.secrets["APP_PASSWORD"]
 
 pw = st.text_input("Enter password", type="password")
+
 if pw != PASSWORD:
     st.stop()
 
-st.write("Welcome! You are logged in.")
+st.success("✅ Welcome! You are logged in.")
