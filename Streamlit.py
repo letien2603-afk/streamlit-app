@@ -47,39 +47,83 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Filter box
+    # Section 1: Filter by IDs
     # -----------------------------
-    search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
+    st.subheader("Filter Section 1: IDs")
+    search_input_ids = st.text_input(
+        "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
+    )
 
-    if st.button("Filter") and search_input:
-        search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
-        filter_cols = ["Order ID", "GA08:SO TranID", "PO Number", "GA24: Distribution Sold to System Integrator ID", "GA25: Distribution Sold to System Integrator Name", "Billing Company", "Billing Customer ID", "Other Customer ID", "Other Company", "Product ID"]
+    if st.button("Filter by IDs") and search_input_ids:
+        search_terms_ids = [t.strip() for t in search_input_ids.split(",") if t.strip()]
+        filter_cols_ids = [
+            "Order ID",
+            "GA08:SO TranID",
+            "PO Number",
+            "GA24: Distribution Sold to System Integrator ID",
+            "Billing Customer ID",
+            "Other Customer ID"
+        ]
 
         try:
-            # Vectorized filtering on selected columns
-            mask = df[filter_cols].apply(
-                lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
+            mask_ids = df[filter_cols_ids].apply(
+                lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
             ).any(axis=1)
-            df_matched = df[mask]
-    
-            if not df_matched.empty:
-                st.success(f"Found {len(df_matched)} matching rows.")
-                st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
+            df_matched_ids = df[mask_ids]
 
-                # Download option
-                csv_data = df_matched.to_csv(index=False).encode("utf-8")
+            if not df_matched_ids.empty:
+                st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
+                st.dataframe(df_matched_ids.reset_index(drop=True), height=500, width=1200)
+
+                csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
                 st.download_button(
-                    "Download matched rows as CSV",
-                    csv_data,
-                    "matched_rows.csv",
+                    "Download Section 1 matched rows as CSV",
+                    csv_data_ids,
+                    "matched_rows_section1.csv",
                     "text/csv"
                 )
             else:
-                st.warning("No matching rows found.")
+                st.warning("No matching rows found in Section 1.")
 
         except Exception as e:
-            st.error(f"Error filtering data: {e}")
-            
+            st.error(f"Error filtering Section 1 data: {e}")
 
+    # -----------------------------
+    # Section 2: Filter by Names/Products
+    # -----------------------------
+    st.subheader("Filter Section 2: Names / Products")
+    search_input_names = st.text_input(
+        "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
+    )
 
+    if st.button("Filter by Names/Products") and search_input_names:
+        search_terms_names = [t.strip() for t in search_input_names.split(",") if t.strip()]
+        filter_cols_names = [
+            "GA25: Distribution Sold to System Integrator Name",
+            "Billing Company",
+            "Other Company",
+            "Product ID"
+        ]
 
+        try:
+            mask_names = df[filter_cols_names].apply(
+                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
+            ).any(axis=1)
+            df_matched_names = df[mask_names]
+
+            if not df_matched_names.empty:
+                st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
+                st.dataframe(df_matched_names.reset_index(drop=True), height=500, width=1200)
+
+                csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download Section 2 matched rows as CSV",
+                    csv_data_names,
+                    "matched_rows_section2.csv",
+                    "text/csv"
+                )
+            else:
+                st.warning("No matching rows found in Section 2.")
+
+        except Exception as e:
+            st.error(f"Error filtering Section 2 data: {e}")
