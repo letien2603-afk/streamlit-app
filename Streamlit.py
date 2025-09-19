@@ -3,7 +3,7 @@ import pandas as pd
 from io import BytesIO
 
 # -----------------------------
-# Hide Streamlit UI elements
+# Hide Streamlit UI elements and remove top padding
 # -----------------------------
 st.markdown("""
 <style>
@@ -52,6 +52,16 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
+
+    # -----------------------------
+    # Full ATF Access (moved above Filter Section 1)
+    # -----------------------------
+    st.subheader("Full ATF Access")
+    if st.button("Show Google Drive Link for Full ATF"):
+        st.markdown(
+            '[Click here to access the Full ATF on Google Drive](https://drive.google.com/your-folder-link)',
+            unsafe_allow_html=True
+        )
 
     # -----------------------------
     # Section 1: Filter by IDs
@@ -140,13 +150,3 @@ if uploaded_file is not None:
                 )
             else:
                 st.warning("No matching rows found in Section 2.")
-
-    # -----------------------------
-    # Button to show Google Drive link
-    # -----------------------------
-    st.subheader("Full ATF Access")
-    if st.button("Show Google Drive Link for Full ATF"):
-        st.markdown(
-            '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/18WeeDZzy3-G-uWpH_W92d6O8IdJmRcQV/view?usp=drive_link)',
-            unsafe_allow_html=True
-        )
