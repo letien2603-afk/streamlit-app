@@ -51,9 +51,6 @@ if st.session_state.logged_in:
     elif st.session_state.uploaded_df is not None:
         # Use previously uploaded file if page reruns
         df = st.session_state.uploaded_df
-        except FileNotFoundError:
-            st.error("Default XLSB file not found. Please upload a file.")
-            df = pd.DataFrame()  # empty placeholder
 
     # Search input
     if not df.empty:
