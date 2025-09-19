@@ -1,69 +1,65 @@
 import streamlit as st
 import pandas as pd
 
-# ===== Hide Streamlit UI elements =====
+# Hide Streamlit default menu, header, and footer
 hide_streamlit_style = """
 <style>
-/* Hide footer including "Manage app" */
-footer[data-testid="stAppFooter"] {
-    visibility: hidden;
-    height: 0px;
-}
-
-/* Hide hamburger menu */
+footer[data-testid="stAppFooter"] {visibility: hidden; height: 0px;}
 #MainMenu {visibility: hidden;}
-
-/* Hide header */
 header {visibility: hidden;}
 </style>
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# ===== Password setup =====
+# Set your password here
 PASSWORD = "myStrongPassword123"
 
 # Initialize session state
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
+if "uploaded_df" not in st.session_state:
+    st.session_state.uploaded_df = None
 
-# Password input
+# Password check
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()  # refresh the page
+            st.rerun()
         else:
             st.error("Incorrect password")
 
-# ===== Main app =====
+# Main app
 if st.session_state.logged_in:
     st.success("Welcome!")
 
-    # ===== Load CSV from Google Drive =====
-    file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
-    csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
+    # File uploader
+    uploaded_file = st.file_uploader("Upload a CSV file", type=["csv", "xlsx"])
 
-    try:
-        # Robust CSV reader using on_bad_lines for modern pandas
-        df = pd.read_csv(
-            csv_url,
-            dtype=str,
-            sep=",",             # Change to ";" or "\t" if needed
-            engine="python",     # More tolerant parser
-            on_bad_lines="skip"  # Skip malformed lines
-        )
-    except Exception as e:
-        st.error(f"Error loading CSV: {e}")
-        st.stop()
+    # If a file is uploaded, read it
+    if uploaded_file is not None:
+        if uploaded_file.name.endswith(".csv"):
+            df = pd.read_csv(uploaded_file, dtype=str)
+        else:
+            df = pd.read_excel(uploaded_file, dtype=str)
+        st.session_state.uploaded_df = df  # store in session state
+    elif st.session_state.uploaded_df is not None:
+        # Use previously uploaded file if page reruns
+        df = st.session_state.uploaded_df
+    else:
+        # Fallback to default CSV if no file uploaded
+        df = pd.read_csv("ATF_Streamlit.csv", dtype=str)
+        st.info("Using default CSV file")
 
-    # ===== Search/filter functionality =====
+    # Search input
     search_terms = st.text_input("Enter search keywords (comma-separated):")
 
     if search_terms:
+        # Split input into list of terms, strip spaces
         terms = [t.strip() for t in search_terms.split(",") if t.strip()]
 
-        # Filter rows matching any search term across all columns
+        # Filter rows that match any term in any column
         mask = df.apply(
             lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
             axis=1
