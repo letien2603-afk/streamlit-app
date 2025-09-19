@@ -50,39 +50,50 @@ uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
 if uploaded_file is not None:
     file_bytes = BytesIO(uploaded_file.read())
 
-    st.info("Please enter the values you want to filter.")
+    # -----------------------------
+    # Convert XLSB to Parquet
+    # -----------------------------
+    st.info("Converting XLSB to Parquet (this may take a while for large files)...")
+    try:
+        all_rows = []
+        with open_workbook(file_bytes) as wb:
+            sheet = wb.get_sheet(1)
+            header_row = next(sheet.rows())
+            header = [cell.v for cell in header_row]
 
+            for row in sheet.rows():
+                all_rows.append([cell.v if cell.v is not None else "" for cell in row])
+
+        df_parquet = pd.DataFrame(all_rows, columns=header).astype(str)
+        parquet_bytes = BytesIO()
+        df_parquet.to_parquet(parquet_bytes, engine="pyarrow", index=False)
+        parquet_bytes.seek(0)
+
+        st.success("XLSB successfully converted to Parquet!")
+
+    except Exception as e:
+        st.error(f"Error converting XLSB to Parquet: {e}")
+        st.stop()
+
+    # -----------------------------
+    # Filter using Parquet file
+    # -----------------------------
+    st.info("Please enter the values you want to filter.")
     search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
 
     if st.button("Filter") and search_input:
         search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
-
         try:
-            st.info("Scanning XLSB for matching rows (fast, streaming)...")
+            # Load Parquet from memory
+            df = pd.read_parquet(parquet_bytes, engine="pyarrow")
 
-            matched_rows = []
-            with open_workbook(file_bytes) as wb:
-                sheet = wb.get_sheet(1)
-                header_row = next(sheet.rows())
-                header = [cell.v for cell in header_row]
-                filter_cols = ["Order ID", "GA08:SO TranID"]
+            # Filter only Order ID and GA08:SO TranID columns
+            filter_cols = ["Order ID", "GA08:SO TranID"]
+            mask = df[filter_cols].apply(lambda col: col.str.contains("|".join(search_terms), case=False, na=False)).any(axis=1)
+            df_matched = df[mask]
 
-                # Ensure filter columns exist
-                col_indices = [header.index(col) for col in filter_cols]
-
-                # Stream-read XLSB and store only matching rows
-                for i, row in enumerate(sheet.rows()):
-                    values = [row[j].v if row[j].v is not None else "" for j in col_indices]
-                    if any(str(val) in search_terms for val in values):
-                        # Store full row
-                        full_row = [row[k].v if row[k].v is not None else "" for k in range(len(header))]
-                        matched_rows.append(full_row)
-
-            if matched_rows:
-                df_matched = pd.DataFrame(matched_rows, columns=header).astype(str)
+            if not df_matched.empty:
                 st.success(f"Found {len(df_matched)} matching rows.")
-
-                # Display matched rows
                 st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
 
                 # Download option
@@ -92,4 +103,4 @@ if uploaded_file is not None:
                 st.warning("No matching rows found.")
 
         except Exception as e:
-            st.error(f"Error processing XLSB: {e}")
+            st.error(f"Error filtering Parquet data: {e}")
