@@ -37,30 +37,49 @@ if st.session_state.logged_in:
     # File uploader
     uploaded_file = st.file_uploader("Upload a file", type=["xlsb", "xlsx"])
 
-    # If a file is uploaded, read it
+    df = pd.DataFrame()  # initialize df
+
+    # Check if pyxlsb is installed
+    pyxlsb_installed = True
+    try:
+        import pyxlsb
+    except ImportError:
+        pyxlsb_installed = False
+
+    # Read uploaded file
     if uploaded_file is not None:
         try:
             if uploaded_file.name.endswith(".xlsb"):
-                df = pd.read_excel(uploaded_file, engine='pyxlsb', dtype=str)
-            else:  # for xlsx
+                if not pyxlsb_installed:
+                    st.error("Missing dependency 'pyxlsb'. Please install it: pip install pyxlsb")
+                else:
+                    df = pd.read_excel(uploaded_file, engine='pyxlsb', dtype=str)
+            else:
                 df = pd.read_excel(uploaded_file, dtype=str)
-            st.session_state.uploaded_df = df  # store in session state
-            st.success(f"Loaded file: {uploaded_file.name}")
+            st.session_state.uploaded_df = df
         except Exception as e:
-            st.error(f"Error reading file: {e}")
-    elif st.session_state.uploaded_df is not None:
-        # Use previously uploaded file if page reruns
+            st.error(f"Error reading uploaded file: {e}")
+
+    elif st.session_state.get("uploaded_df") is not None:
         df = st.session_state.uploaded_df
 
-    # Search input
+    else:
+        # Fallback to default XLSB file
+        if pyxlsb_installed:
+            try:
+                df = pd.read_excel("ATF_Streamlit.xlsb", engine='pyxlsb', dtype=str)
+            except FileNotFoundError:
+                st.error("Default XLSB file not found. Please upload a file.")
+        else:
+            st.error("Missing dependency 'pyxlsb'. Please install it: pip install pyxlsb")
+
+    # Search and display
     if not df.empty:
         search_terms = st.text_input("Enter search keywords (comma-separated):")
 
         if search_terms:
-            # Split input into list of terms, strip spaces
             terms = [t.strip() for t in search_terms.split(",") if t.strip()]
 
-            # Filter rows that match any term in any column
             mask = df.apply(
                 lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
                 axis=1
@@ -72,3 +91,5 @@ if st.session_state.logged_in:
         else:
             st.write("Showing first 10 rows (no filter applied):")
             st.dataframe(df.head(10).reset_index(drop=True))
+    else:
+        st.info("No data available. Please upload a file or check the default XLSB.")
