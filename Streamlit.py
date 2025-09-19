@@ -53,7 +53,7 @@ if uploaded_file is not None:
 
     if st.button("Filter") and search_input:
         search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
-        filter_cols = ["Order ID", "GA08:SO TranID"]
+        filter_cols = ["Order ID", "GA08:SO TranID", "PO Number", "GA24: Distribution Sold to System Integrator ID", "GA25: Distribution Sold to System Integrator Name", "Billing Company", "Billing Customer ID", "Other Customer ID", "Other Company", "Product ID"]
 
         try:
             # Vectorized filtering on selected columns
