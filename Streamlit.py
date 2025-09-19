@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
+import gdown
 from io import BytesIO
-import requests
 
 # -----------------------------
 # Hide Streamlit UI elements
@@ -26,7 +26,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Incorrect password")
     st.stop()
@@ -34,20 +34,19 @@ if not st.session_state.logged_in:
 st.success("Welcome!")
 
 # -----------------------------
-# Parquet file from Google Drive
+# Download Parquet from Google Drive using gdown
 # -----------------------------
 st.info("Loading data from Google Drive...")
 
-# Original share link: 
-# https://drive.google.com/file/d/1GomMh4_JTnNxpwuJapr3rqmnF5t2v84P/view?usp=drive_link
-# Convert to direct download link:
-parquet_url = "https://drive.google.com/uc?export=download&id=1GomMh4_JTnNxpwuJapr3rqmnF5t2v84P"
+# Google Drive file ID
+file_id = "1GomMh4_JTnNxpwuJapr3rqmnF5t2v84P"
+# Local temporary file
+parquet_file = "ATF.parquet"
+url = f"https://drive.google.com/uc?id={file_id}"
 
 try:
-    response = requests.get(parquet_url)
-    response.raise_for_status()
-    parquet_bytes = BytesIO(response.content)
-    df = pd.read_parquet(parquet_bytes, engine="pyarrow")
+    gdown.download(url, parquet_file, quiet=False)
+    df = pd.read_parquet(parquet_file, engine="pyarrow")
     st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
 except Exception as e:
     st.error(f"Error loading Parquet file: {e}")
@@ -64,7 +63,9 @@ if st.button("Filter") and search_input:
 
     try:
         # Vectorized filtering on selected columns
-        mask = df[filter_cols].apply(lambda col: col.str.contains("|".join(search_terms), case=False, na=False)).any(axis=1)
+        mask = df[filter_cols].apply(
+            lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
+        ).any(axis=1)
         df_matched = df[mask]
 
         if not df_matched.empty:
