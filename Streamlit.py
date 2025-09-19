@@ -1,16 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-
-# -----------------------------
-# Check for pyxlsb
-# -----------------------------
-try:
-    import pyxlsb
-    from pyxlsb import open_workbook
-except ImportError:
-    st.error("Missing 'pyxlsb'. Install with: pip install pyxlsb")
-    st.stop()
+import requests
 
 # -----------------------------
 # Hide Streamlit UI elements
@@ -35,7 +26,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Incorrect password")
     st.stop()
@@ -43,64 +34,48 @@ if not st.session_state.logged_in:
 st.success("Welcome!")
 
 # -----------------------------
-# Upload XLSB file
+# Parquet file from Google Drive
 # -----------------------------
-uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
+st.info("Loading data from Google Drive...")
 
-if uploaded_file is not None:
-    file_bytes = BytesIO(uploaded_file.read())
+# Original share link: 
+# https://drive.google.com/file/d/1GomMh4_JTnNxpwuJapr3rqmnF5t2v84P/view?usp=drive_link
+# Convert to direct download link:
+parquet_url = "https://drive.google.com/uc?export=download&id=1GomMh4_JTnNxpwuJapr3rqmnF5t2v84P"
 
-    # -----------------------------
-    # Convert XLSB to Parquet
-    # -----------------------------
-    st.info("Converting XLSB to Parquet (this may take a while for large files)...")
+try:
+    response = requests.get(parquet_url)
+    response.raise_for_status()
+    parquet_bytes = BytesIO(response.content)
+    df = pd.read_parquet(parquet_bytes, engine="pyarrow")
+    st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
+except Exception as e:
+    st.error(f"Error loading Parquet file: {e}")
+    st.stop()
+
+# -----------------------------
+# Filter box
+# -----------------------------
+search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
+
+if st.button("Filter") and search_input:
+    search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
+    filter_cols = ["Order ID", "GA08:SO TranID"]
+
     try:
-        all_rows = []
-        with open_workbook(file_bytes) as wb:
-            sheet = wb.get_sheet(1)
-            header_row = next(sheet.rows())
-            header = [cell.v for cell in header_row]
+        # Vectorized filtering on selected columns
+        mask = df[filter_cols].apply(lambda col: col.str.contains("|".join(search_terms), case=False, na=False)).any(axis=1)
+        df_matched = df[mask]
 
-            for row in sheet.rows():
-                all_rows.append([cell.v if cell.v is not None else "" for cell in row])
+        if not df_matched.empty:
+            st.success(f"Found {len(df_matched)} matching rows.")
+            st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
 
-        df_parquet = pd.DataFrame(all_rows, columns=header).astype(str)
-        parquet_bytes = BytesIO()
-        df_parquet.to_parquet(parquet_bytes, engine="pyarrow", index=False)
-        parquet_bytes.seek(0)
-
-        st.success("XLSB successfully converted to Parquet!")
+            # Download option
+            csv_data = df_matched.to_csv(index=False).encode("utf-8")
+            st.download_button("Download matched rows as CSV", csv_data, "matched_rows.csv", "text/csv")
+        else:
+            st.warning("No matching rows found.")
 
     except Exception as e:
-        st.error(f"Error converting XLSB to Parquet: {e}")
-        st.stop()
-
-    # -----------------------------
-    # Filter using Parquet file
-    # -----------------------------
-    st.info("Please enter the values you want to filter.")
-    search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
-
-    if st.button("Filter") and search_input:
-        search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
-        try:
-            # Load Parquet from memory
-            df = pd.read_parquet(parquet_bytes, engine="pyarrow")
-
-            # Filter only Order ID and GA08:SO TranID columns
-            filter_cols = ["Order ID", "GA08:SO TranID"]
-            mask = df[filter_cols].apply(lambda col: col.str.contains("|".join(search_terms), case=False, na=False)).any(axis=1)
-            df_matched = df[mask]
-
-            if not df_matched.empty:
-                st.success(f"Found {len(df_matched)} matching rows.")
-                st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
-
-                # Download option
-                csv_data = df_matched.to_csv(index=False).encode("utf-8")
-                st.download_button("Download matched rows as CSV", csv_data, "matched_rows.csv", "text/csv")
-            else:
-                st.warning("No matching rows found.")
-
-        except Exception as e:
-            st.error(f"Error filtering Parquet data: {e}")
+        st.error(f"Error filtering data: {e}")
