@@ -26,14 +26,23 @@ if st.session_state.logged_in:
     df = pd.read_csv("ATF_Streamlit.csv")
 
     # Search input
-    search_term = st.text_input("Enter a keyword to search:")
+    search_terms = st.text_input("Enter search keywords (comma-separated):")
 
-    if search_term:
-        # Case-insensitive search across all columns
-        mask = df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
+    if search_terms:
+        # Split input into list of terms, strip spaces
+        terms = [t.strip() for t in search_terms.split(",") if t.strip()]
+
+        # Create a mask for rows matching any term across all columns
+        mask = df.apply(
+            lambda row: any(row.astype(str).str.contains(term, case=False).any() for term in terms),
+            axis=1
+        )
         filtered_df = df[mask]
+
         st.write(f"Found {len(filtered_df)} matching rows:")
-        st.dataframe(filtered_df)
+
+        # Reset index so no extra index column shows
+        st.dataframe(filtered_df.reset_index(drop=True))
     else:
         st.write("Showing first 10 rows (no filter applied):")
-        st.dataframe(df.head(10))
+        st.dataframe(df.head(10).reset_index(drop=True))
