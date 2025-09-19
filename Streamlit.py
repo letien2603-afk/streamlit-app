@@ -111,7 +111,7 @@ if uploaded_file is not None:
                 st.dataframe(df_matched_ids.reset_index(drop=True), height=500, width=1200)
                 csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
                 st.download_button(
-                    "Download Section 1 matched rows as CSV",
+                    "Download Matched IDs to CSV",
                     csv_data_ids,
                     "matched_rows_section1.csv",
                     "text/csv"
@@ -154,7 +154,7 @@ if uploaded_file is not None:
                 st.dataframe(df_matched_names.reset_index(drop=True), height=500, width=1200)
                 csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
                 st.download_button(
-                    "Download Section 2 matched rows as CSV",
+                    "Download Matched Names/Products to CSV",
                     csv_data_names,
                     "matched_rows_section2.csv",
                     "text/csv"
