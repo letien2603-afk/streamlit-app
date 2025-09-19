@@ -1,6 +1,7 @@
 import streamlit as st
 import pandas as pd
 
+# ===== Hide Streamlit UI elements =====
 hide_streamlit_style = """
 <style>
 /* Hide footer including "Manage app" */
@@ -16,17 +17,16 @@ footer[data-testid="stAppFooter"] {
 header {visibility: hidden;}
 </style>
 """
-
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-# Set your password here
+# ===== Password setup =====
 PASSWORD = "myStrongPassword123"
 
 # Initialize session state
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
-# If not logged in, show password input
+# Password input
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
@@ -36,28 +36,26 @@ if not st.session_state.logged_in:
         else:
             st.error("Incorrect password")
 
-# If logged in, show CSV preview with filter option
+# ===== Main app =====
 if st.session_state.logged_in:
     st.success("Welcome!")
 
     # ===== Load CSV from Google Drive =====
-    # Use the "shareable link" of your Google Drive CSV file
-    # Example link: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
-    # Convert to direct download link:
-    file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
+    file_id = "1d90WrGEycbzltBbwpcjeksjA9CkPf0n9"
     csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-    # Read CSV
-    df = pd.read_csv(csv_url, dtype=str)
+    try:
+        df = pd.read_csv(csv_url, dtype=str)
+    except Exception as e:
+        st.error(f"Error loading CSV: {e}")
+        st.stop()
 
-    # Search input
+    # ===== Search/filter functionality =====
     search_terms = st.text_input("Enter search keywords (comma-separated):")
 
     if search_terms:
-        # Split input into list of terms, strip spaces
         terms = [t.strip() for t in search_terms.split(",") if t.strip()]
 
-        # Create a mask for rows matching any term across all columns
         mask = df.apply(
             lambda row: any(row.astype(str).str.contains(term, case=False).any() for term in terms),
             axis=1
@@ -65,8 +63,6 @@ if st.session_state.logged_in:
         filtered_df = df[mask]
 
         st.write(f"Found {len(filtered_df)} matching rows:")
-
-        # Reset index so no extra index column shows
         st.dataframe(filtered_df.reset_index(drop=True))
     else:
         st.write("Showing first 10 rows (no filter applied):")
