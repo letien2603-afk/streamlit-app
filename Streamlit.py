@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 from io import BytesIO
-
+from datetime import datetime
 # -----------------------------
 # Hide Streamlit UI elements and remove top padding
 # -----------------------------
@@ -37,7 +37,11 @@ if not st.session_state.logged_in:
             st.error("Incorrect password")
     st.stop()
 
-st.success("Welcome!")
+today = datetime.today()
+first_day = today.replace(day=1)
+week_of_month = (today.day + first_day.weekday()) // 7 + 1
+st.success(f"Welcome to the ATF! You are in **Week {week_of_month}** of the month.")
+
 
 # -----------------------------
 # Upload Parquet file
