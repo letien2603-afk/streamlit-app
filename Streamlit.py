@@ -12,13 +12,23 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-hide_menu_style = """
-    <style>
-    #MainMenu {visibility: hidden;}
-    footer {visibility: hidden;}
-    </style>
+hide_streamlit_style = """
+<style>
+/* Hide Streamlit header */
+header {visibility: hidden;}
+
+/* Hide hamburger menu */
+#MainMenu {visibility: hidden;}
+
+/* Hide footer */
+footer {visibility: hidden;}
+
+/* If you want to remove extra space left by footer */
+footer + div {display: none;}
+</style>
 """
-st.markdown(hide_menu_style, unsafe_allow_html=True)
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 
 # Set your password here
