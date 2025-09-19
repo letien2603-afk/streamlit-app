@@ -147,6 +147,10 @@ if uploaded_file is not None:
             mask_names = df[filter_cols_names].apply(
                 lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
             ).any(axis=1)
+            
+            # Remove rows that are completely empty across filter columns
+            mask_names = mask_names & df[filter_cols_names].apply(lambda row: row.str.strip().replace('', pd.NA).notna().any(), axis=1)
+
             df_matched_names = df[mask_names]
 
             if not df_matched_names.empty:
