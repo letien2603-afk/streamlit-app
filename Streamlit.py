@@ -1,9 +1,7 @@
 import streamlit as st
 import pandas as pd
 
-# -----------------------------
 # Hide Streamlit UI elements
-# -----------------------------
 st.markdown("""
 <style>
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -12,14 +10,8 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
-# -----------------------------
-# Password setup
-# -----------------------------
 PASSWORD = "myStrongPassword123"
 
-# -----------------------------
-# Session state
-# -----------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "uploaded_file" not in st.session_state:
@@ -27,24 +19,20 @@ if "uploaded_file" not in st.session_state:
 if "full_df" not in st.session_state:
     st.session_state.full_df = None
 
-# -----------------------------
-# 1️⃣ Password check
-# -----------------------------
+# Password
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()  # updated for newer Streamlit
+            st.rerun()
         else:
             st.error("Incorrect password")
     st.stop()
 
 st.success("Welcome!")
 
-# -----------------------------
-# 2️⃣ File upload
-# -----------------------------
+# File upload
 uploaded_file = st.file_uploader("Upload XLSB/XLSX file", type=["xlsb", "xlsx"])
 if uploaded_file is not None:
     st.session_state.uploaded_file = uploaded_file
@@ -55,31 +43,10 @@ try:
 except ImportError:
     pyxlsb_installed = False
 
-# -----------------------------
-# 3️⃣ Preview first 10 rows
-# -----------------------------
-df_preview = pd.DataFrame()
-if st.session_state.uploaded_file is not None:
-    try:
-        if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
-            df_preview = pd.read_excel(uploaded_file, engine="pyxlsb", nrows=10, dtype=str)
-        else:
-            df_preview = pd.read_excel(uploaded_file, nrows=10, dtype=str)
-    except Exception as e:
-        st.error(f"Error reading file: {e}")
-
-# -----------------------------
-# Show preview
-# -----------------------------
-display_df = df_preview
-if not df_preview.empty:
-    st.write("Preview (first 10 rows):")
-    st.dataframe(df_preview)
-
-# -----------------------------
-# 4️⃣ Filter input (only Order ID & GA08:SO TranID)
-# -----------------------------
+# Filter input (only Order ID & GA08:SO TranID)
 search_input = st.text_input("Enter value(s) to filter (comma-separated):")
+
+display_df = pd.DataFrame()  # empty by default
 
 if st.button("Filter") and search_input and uploaded_file is not None:
     terms = [t.strip() for t in search_input.split(",") if t.strip()]
@@ -111,8 +78,6 @@ if st.button("Filter") and search_input and uploaded_file is not None:
         display_df = filtered_df
         st.write(f"Found {len(filtered_df)} matching rows:")
 
-# -----------------------------
-# Show table (preview or filtered)
-# -----------------------------
+# Show filtered table only
 if not display_df.empty:
     st.dataframe(display_df.reset_index(drop=True))
