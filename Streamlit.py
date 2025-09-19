@@ -35,7 +35,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()
+            st.rerun()  # Updated for newer Streamlit versions
         else:
             st.error("Incorrect password")
     st.stop()
@@ -77,37 +77,38 @@ if not df_preview.empty:
     st.dataframe(df_preview)
 
 # -----------------------------
-# 4️⃣ Filtering box
+# 4️⃣ Filter input and button
 # -----------------------------
 search_input = st.text_input("Enter value(s) to filter (comma-separated):")
+if st.button("Filter"):
+    if not search_input:
+        st.warning("Please enter at least one value to filter.")
+    elif st.session_state.uploaded_file is None:
+        st.warning("Please upload a file first.")
+    else:
+        # Parse terms
+        terms = [t.strip() for t in search_input.split(",") if t.strip()]
 
-if search_input and st.session_state.uploaded_file is not None:
-    terms = [t.strip() for t in search_input.split(",") if t.strip()]
+        # Load full dataset only once
+        if st.session_state.full_df is None:
+            try:
+                uploaded_file = st.session_state.uploaded_file
+                if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
+                    st.session_state.full_df = pd.read_excel(uploaded_file, engine="pyxlsb", dtype=str)
+                else:
+                    st.session_state.full_df = pd.read_excel(uploaded_file, dtype=str)
+            except Exception as e:
+                st.error(f"Error reading full file for filtering: {e}")
+                st.stop()
 
-    # -----------------------------
-    # Read full dataset only once
-    # -----------------------------
-    if st.session_state.full_df is None:
-        try:
-            uploaded_file = st.session_state.uploaded_file
-            if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
-                st.session_state.full_df = pd.read_excel(uploaded_file, engine="pyxlsb", dtype=str)
-            else:
-                st.session_state.full_df = pd.read_excel(uploaded_file, dtype=str)
-        except Exception as e:
-            st.error(f"Error reading full file for filtering: {e}")
-            st.stop()
+        df_full = st.session_state.full_df
 
-    df_full = st.session_state.full_df
+        # Filter rows that contain any of the terms in any column
+        mask = df_full.apply(
+            lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
+            axis=1
+        )
+        filtered_df = df_full[mask]
 
-    # -----------------------------
-    # Filter rows containing any term in any column
-    # -----------------------------
-    mask = df_full.apply(
-        lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
-        axis=1
-    )
-    filtered_df = df_full[mask]
-
-    st.write(f"Found {len(filtered_df)} matching rows:")
-    st.dataframe(filtered_df.reset_index(drop=True))
+        st.write(f"Found {len(filtered_df)} matching rows:")
+        st.dataframe(filtered_df.reset_index(drop=True))
