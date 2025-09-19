@@ -13,7 +13,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.experimental_rerun()  # refresh the page
+            st.rerun()  # refresh the page
         else:
             st.error("Incorrect password")
 
