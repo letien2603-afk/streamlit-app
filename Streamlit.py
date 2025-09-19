@@ -25,7 +25,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Incorrect password")
     st.stop()
@@ -49,17 +49,17 @@ if uploaded_file is not None:
     # -----------------------------
     # Filter box
     # -----------------------------
-    search_input = st.text_input("Enter search values (comma-separated):")
+    search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
 
     if st.button("Filter") and search_input:
         search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
+        filter_cols = ["Order ID", "GA08:SO TranID"]
 
         try:
-            # Vectorized filtering across all columns
-            mask = df.apply(
-                lambda col: col.astype(str).str.contains("|".join(search_terms), case=False, na=False)
-            , axis=0).any(axis=1)
-
+            # Vectorized filtering on selected columns
+            mask = df[filter_cols].apply(
+                lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
+            ).any(axis=1)
             df_matched = df[mask]
 
             num_matches = len(df_matched)
