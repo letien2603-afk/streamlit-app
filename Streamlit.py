@@ -44,20 +44,19 @@ if st.session_state.logged_in:
     file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
     csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-    # Try reading with more robust options
-try:
-    df = pd.read_csv(
-        csv_url,
-        dtype=str,
-        sep=",",          # Try ";" or "\t" if comma fails
-        engine="python",  # More tolerant parser
-        error_bad_lines=False,  # Skip malformed lines
-        warn_bad_lines=True      # Show warning for skipped lines
-    )
-except Exception as e:
-    st.error(f"Error loading CSV: {e}")
-    st.stop()
-
+    try:
+        # Robust CSV reader to handle malformed lines or weird delimiters
+        df = pd.read_csv(
+            csv_url,
+            dtype=str,
+            sep=",",            # Change to ";" or "\t" if needed
+            engine="python",    # More tolerant parser than default C engine
+            error_bad_lines=False,  # Skip lines with too many/few fields
+            warn_bad_lines=True      # Show warning for skipped lines
+        )
+    except Exception as e:
+        st.error(f"Error loading CSV: {e}")
+        st.stop()
 
     # ===== Search/filter functionality =====
     search_terms = st.text_input("Enter search keywords (comma-separated):")
@@ -65,8 +64,9 @@ except Exception as e:
     if search_terms:
         terms = [t.strip() for t in search_terms.split(",") if t.strip()]
 
+        # Filter rows matching any search term across all columns
         mask = df.apply(
-            lambda row: any(row.astype(str).str.contains(term, case=False).any() for term in terms),
+            lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
             axis=1
         )
         filtered_df = df[mask]
