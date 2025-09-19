@@ -44,11 +44,20 @@ if st.session_state.logged_in:
     file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
     csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
-    try:
-        df = pd.read_csv(csv_url, dtype=str)
-    except Exception as e:
-        st.error(f"Error loading CSV: {e}")
-        st.stop()
+    # Try reading with more robust options
+try:
+    df = pd.read_csv(
+        csv_url,
+        dtype=str,
+        sep=",",          # Try ";" or "\t" if comma fails
+        engine="python",  # More tolerant parser
+        error_bad_lines=False,  # Skip malformed lines
+        warn_bad_lines=True      # Show warning for skipped lines
+    )
+except Exception as e:
+    st.error(f"Error loading CSV: {e}")
+    st.stop()
+
 
     # ===== Search/filter functionality =====
     search_terms = st.text_input("Enter search keywords (comma-separated):")
