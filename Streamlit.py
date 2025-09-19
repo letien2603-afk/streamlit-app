@@ -7,10 +7,10 @@ from io import BytesIO
 # -----------------------------
 st.markdown("""
 <style>
+/* Hide default Streamlit header/footer */
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
-</style>
 
 /* Remove top padding / margin */
 .block-container {
