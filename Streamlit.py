@@ -69,7 +69,6 @@ if uploaded_file is not None:
                 "Billing Customer ID",
                 "Other Customer ID"
             ]
-            # Convert columns to string to prevent crashes
             for col in filter_cols_ids:
                 if col in df.columns:
                     df[col] = df[col].astype(str)
@@ -113,7 +112,6 @@ if uploaded_file is not None:
                 "Other Company",
                 "Product ID"
             ]
-            # Convert columns to string to prevent crashes
             for col in filter_cols_names:
                 if col in df.columns:
                     df[col] = df[col].astype(str)
@@ -135,3 +133,13 @@ if uploaded_file is not None:
                 )
             else:
                 st.warning("No matching rows found in Section 2.")
+
+    # -----------------------------
+    # Button to show Google Drive link
+    # -----------------------------
+    st.subheader("Full ATF Access")
+    if st.button("Show Google Drive Link for Full ATF"):
+        st.markdown(
+            '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/18WeeDZzy3-G-uWpH_W92d6O8IdJmRcQV/view?usp=drive_link)',
+            unsafe_allow_html=True
+        )
