@@ -106,7 +106,7 @@ if uploaded_file is not None:
             ).any(axis=1)
 
             # Remove rows that are completely empty across filter columns
-            mask_ids = mask_ids & df[filter_cols_ids].apply(lambda row: row.str.strip().replace('', pd.NA).notna().any(), axis=1)
+            #mask_ids = mask_ids & df[filter_cols_ids].apply(lambda row: row.str.strip().replace('', pd.NA).notna().any(), axis=1)
 
             df_matched_ids = df[mask_ids]
 
