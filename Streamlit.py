@@ -25,7 +25,7 @@ if not st.session_state.logged_in:
     if st.button("Login"):
         if password == PASSWORD:
             st.session_state.logged_in = True
-            st.rerun()
+            st.experimental_rerun()
         else:
             st.error("Incorrect password")
     st.stop()
@@ -62,18 +62,18 @@ if uploaded_file is not None:
             ).any(axis=1)
             df_matched = df[mask]
 
-            num_matches = len(df_matched)
-            st.success(f"Found {num_matches} matching rows.")
+            if not df_matched.empty:
+                st.success(f"Found {len(df_matched)} matching rows.")
+                st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
 
-            if num_matches > 0:
-                df_display = df_matched.reset_index(drop=True)
-                if num_matches <= 50:
-                    # For small result sets, use st.table (all rows visible)
-                    st.table(df_display)
-                else:
-                    # For larger result sets, use st.dataframe with scrollable height
-                    table_height = min(35 * num_matches, 1000)
-                    st.dataframe(df_display, height=table_height, width=1200)
+                # Download option
+                csv_data = df_matched.to_csv(index=False).encode("utf-8")
+                st.download_button(
+                    "Download matched rows as CSV",
+                    csv_data,
+                    "matched_rows.csv",
+                    "text/csv"
+                )
             else:
                 st.warning("No matching rows found.")
 
