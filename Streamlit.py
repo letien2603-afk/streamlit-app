@@ -47,10 +47,10 @@ if st.session_state.logged_in:
     elif st.session_state.uploaded_df is not None:
         # Use previously uploaded file if page reruns
         df = st.session_state.uploaded_df
-    else:
+    #else:
         # Fallback to default CSV if no file uploaded
-        df = pd.read_csv("ATF_Streamlit.csv", dtype=str)
-        st.info("Using default CSV file")
+        #df = pd.read_csv("ATF_Streamlit.csv", dtype=str)
+        #st.info("Using default CSV file")
 
     # Search input
     search_terms = st.text_input("Enter search keywords (comma-separated):")
