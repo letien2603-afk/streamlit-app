@@ -12,9 +12,6 @@ hide_streamlit_style = """
 """
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
 
-st.title("My App")
-st.dataframe([[1,2,3],[4,5,6]])
-
 # Set your password here
 PASSWORD = "myStrongPassword123"
 
