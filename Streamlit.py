@@ -64,16 +64,11 @@ if uploaded_file is not None:
 
             if not df_matched.empty:
                 st.success(f"Found {len(df_matched)} matching rows.")
-                st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
 
-                # Download option
-                csv_data = df_matched.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download matched rows as CSV",
-                    csv_data,
-                    "matched_rows.csv",
-                    "text/csv"
-                )
+                # Dynamically adjust height: 35px per row, max 1000px
+                table_height = min(35 * len(df_matched), 1000)
+                st.dataframe(df_matched.reset_index(drop=True), height=table_height, width=1200)
+
             else:
                 st.warning("No matching rows found.")
 
