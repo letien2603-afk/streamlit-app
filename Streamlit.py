@@ -1,4 +1,3 @@
-!pip install pyxlsb
 import streamlit as st
 import pandas as pd
 
