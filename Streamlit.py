@@ -10,24 +10,24 @@ hide_streamlit_style = """
     }
     </style>
 """
-st.markdown(hide_streamlit_style, unsafe_allow_html=True)
-
 hide_streamlit_style = """
 <style>
-/* Hide Streamlit header */
-header {visibility: hidden;}
+/* Hide footer including "Manage app" */
+footer[data-testid="stAppFooter"] {
+    visibility: hidden;
+    height: 0px;
+}
 
 /* Hide hamburger menu */
 #MainMenu {visibility: hidden;}
 
-/* Hide footer */
-footer {visibility: hidden;}
-
-/* If you want to remove extra space left by footer */
-footer + div {display: none;}
+/* Hide header */
+header {visibility: hidden;}
 </style>
 """
+
 st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
 
 
 
