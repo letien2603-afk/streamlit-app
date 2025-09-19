@@ -40,8 +40,9 @@ if not st.session_state.logged_in:
 today = datetime.today()
 first_day = today.replace(day=1)
 week_of_month = (today.day + first_day.weekday()) // 7 + 1
-st.success(f"Welcome to the ATF! You are in **Week {week_of_month}** of the month.")
+month_name = today.strftime("%B")  # Full month name, e.g., "September"
 
+st.success(f"Welcome to the ATF! You are in **Week {week_of_month} of {month_name}**.")
 
 # -----------------------------
 # Upload Parquet file
