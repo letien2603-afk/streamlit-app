@@ -1,7 +1,9 @@
 import streamlit as st
 import pandas as pd
 
+# -----------------------------
 # Hide Streamlit UI elements
+# -----------------------------
 st.markdown("""
 <style>
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -10,9 +12,14 @@ header {visibility: hidden;}
 </style>
 """, unsafe_allow_html=True)
 
+# -----------------------------
+# Password setup
+# -----------------------------
 PASSWORD = "myStrongPassword123"
 
+# -----------------------------
 # Session state
+# -----------------------------
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 if "uploaded_file" not in st.session_state:
@@ -20,7 +27,9 @@ if "uploaded_file" not in st.session_state:
 if "full_df" not in st.session_state:
     st.session_state.full_df = None
 
+# -----------------------------
 # 1️⃣ Password check
+# -----------------------------
 if not st.session_state.logged_in:
     password = st.text_input("Enter password:", type="password")
     if st.button("Login"):
@@ -33,7 +42,9 @@ if not st.session_state.logged_in:
 
 st.success("Welcome!")
 
+# -----------------------------
 # 2️⃣ File upload
+# -----------------------------
 uploaded_file = st.file_uploader("Upload XLSB/XLSX file", type=["xlsb", "xlsx"])
 if uploaded_file is not None:
     st.session_state.uploaded_file = uploaded_file
@@ -44,7 +55,9 @@ try:
 except ImportError:
     pyxlsb_installed = False
 
-# 3️⃣ Preview first 10 rows (fast)
+# -----------------------------
+# 3️⃣ Preview first 10 rows
+# -----------------------------
 df_preview = pd.DataFrame()
 if st.session_state.uploaded_file is not None:
     uploaded_file = st.session_state.uploaded_file
@@ -63,26 +76,33 @@ if not df_preview.empty:
     st.write("Preview (first 10 rows):")
     st.dataframe(df_preview)
 
-# 4️⃣ Filter box (applies to full dataset)
+# -----------------------------
+# 4️⃣ Filtering box
+# -----------------------------
 search_input = st.text_input("Enter value(s) to filter (comma-separated):")
 
 if search_input and st.session_state.uploaded_file is not None:
     terms = [t.strip() for t in search_input.split(",") if t.strip()]
 
-    # Read entire dataset only once and store in session_state
+    # -----------------------------
+    # Read full dataset only once
+    # -----------------------------
     if st.session_state.full_df is None:
         try:
-            if st.session_state.uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
-                st.session_state.full_df = pd.read_excel(st.session_state.uploaded_file, engine="pyxlsb", dtype=str)
+            uploaded_file = st.session_state.uploaded_file
+            if uploaded_file.name.endswith(".xlsb") and pyxlsb_installed:
+                st.session_state.full_df = pd.read_excel(uploaded_file, engine="pyxlsb", dtype=str)
             else:
-                st.session_state.full_df = pd.read_excel(st.session_state.uploaded_file, dtype=str)
+                st.session_state.full_df = pd.read_excel(uploaded_file, dtype=str)
         except Exception as e:
             st.error(f"Error reading full file for filtering: {e}")
             st.stop()
 
     df_full = st.session_state.full_df
 
-    # Filter rows containing any of the terms in any column
+    # -----------------------------
+    # Filter rows containing any term in any column
+    # -----------------------------
     mask = df_full.apply(
         lambda row: any(row.astype(str).str.contains(term, case=False, na=False).any() for term in terms),
         axis=1
