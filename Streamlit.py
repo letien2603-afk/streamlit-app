@@ -2,14 +2,18 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 
-# Check for pyxlsb if XLSB files will be used
+# -----------------------------
+# Check for pyxlsb
+# -----------------------------
 try:
     import pyxlsb
-    PYXLSB_AVAILABLE = True
+    from pyxlsb import open_workbook
 except ImportError:
-    PYXLSB_AVAILABLE = False
+    pyxlsb = None
 
+# -----------------------------
 # Hide Streamlit UI elements
+# -----------------------------
 st.markdown("""
 <style>
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -39,73 +43,62 @@ if not st.session_state.logged_in:
 st.success("Welcome!")
 
 # -----------------------------
-# File upload
+# Upload XLSB file
 # -----------------------------
-uploaded_file = st.file_uploader("Upload XLSB/XLSX file", type=["xlsb", "xlsx"])
+uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
 
 # -----------------------------
-# Search input
+# Convert XLSB to Parquet immediately after upload
 # -----------------------------
-search_input = st.text_input("Enter Order ID(s) to filter (comma-separated):")
+if uploaded_file is not None:
+    if pyxlsb is None:
+        st.error("Missing 'pyxlsb'. Install with: pip install pyxlsb")
+        st.stop()
 
-# Only filter when button is clicked
-if st.button("Filter") and uploaded_file is not None and search_input:
-    search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
-    matched_rows = []
+    st.info("Converting XLSB to Parquet for fast filtering...")
 
-    try:
-        # XLSB file
-        if uploaded_file.name.endswith(".xlsb"):
-            if not PYXLSB_AVAILABLE:
-                st.error("Missing 'pyxlsb' package. Install with: pip install pyxlsb")
-                st.stop()
+    file_bytes = BytesIO(uploaded_file.read())
+    with open_workbook(file_bytes) as wb:
+        sheet = wb.get_sheet(1)  # first sheet
+        header_row = next(sheet.rows())
+        header = [cell.v for cell in header_row]
+        rows = [[cell.v if cell.v is not None else "" for cell in r] for r in sheet.rows()]
 
-            from pyxlsb import open_workbook
-            file_bytes = BytesIO(uploaded_file.read())
-            with open_workbook(file_bytes) as wb:
-                sheet = wb.get_sheet(1)  # first sheet
-                header_row = next(sheet.rows())
-                header = [cell.v for cell in header_row]
+    df = pd.DataFrame(rows, columns=header)
 
-                # Get indexes of the filter columns
-                try:
-                    order_id_idx = header.index("Order ID")
-                    so_tranid_idx = header.index("GA08:SO TranID")
-                except ValueError as e:
-                    st.error(f"Column not found: {e}")
-                    st.stop()
+    # Convert to Parquet in memory
+    parquet_buffer = BytesIO()
+    df.to_parquet(parquet_buffer, index=False)
+    parquet_buffer.seek(0)
+    st.success("Conversion complete! Ready for filtering.")
 
-                # Iterate rows and keep only matches
-                for row in sheet.rows():
-                    row_values = [cell.v if cell.v is not None else "" for cell in row]
-                    if str(row_values[order_id_idx]) in search_terms or str(row_values[so_tranid_idx]) in search_terms:
-                        matched_rows.append(row_values)
+    # Keep Parquet in memory
+    df_parquet = pd.read_parquet(parquet_buffer)
 
-        # XLSX file
-        else:
-            df_full = pd.read_excel(uploaded_file, dtype=str)
-            filter_columns = ["Order ID", "GA08:SO TranID"]
-            missing_cols = [col for col in filter_columns if col not in df_full.columns]
-            if missing_cols:
-                st.error(f"Missing columns in the dataset: {missing_cols}")
-                st.stop()
+    # -----------------------------
+    # Filter input
+    # -----------------------------
+    search_input = st.text_input("Enter Order ID(s) to filter (comma-separated):")
 
-            mask = pd.Series(False, index=df_full.index)
-            for term in search_terms:
-                mask |= df_full[filter_columns].astype(str).apply(
-                    lambda col: col.str.contains(term, case=False, na=False)
-                ).any(axis=1)
-            df_filtered = df_full[mask]
-            matched_rows = df_filtered.values.tolist()
-            header = df_full.columns.tolist()
+    if st.button("Filter") and search_input:
+        search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
 
-        # Show results
-        if matched_rows:
-            df_result = pd.DataFrame(matched_rows, columns=header)
-            st.write(f"Found {len(df_result)} matching rows:")
-            st.dataframe(df_result)
+        # Ensure required columns exist
+        filter_columns = ["Order ID", "GA08:SO TranID"]
+        missing_cols = [col for col in filter_columns if col not in df_parquet.columns]
+        if missing_cols:
+            st.error(f"Missing columns in the dataset: {missing_cols}")
+            st.stop()
+
+        # Filter rows
+        mask = df_parquet[filter_columns].astype(str).apply(
+            lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
+        ).any(axis=1)
+
+        filtered_df = df_parquet[mask]
+
+        if not filtered_df.empty:
+            st.write(f"Found {len(filtered_df)} matching rows:")
+            st.dataframe(filtered_df.reset_index(drop=True))
         else:
             st.warning("No matching rows found.")
-
-    except Exception as e:
-        st.error(f"Error processing file: {e}")
