@@ -18,13 +18,22 @@ if not st.session_state.logged_in:
         else:
             st.error("Incorrect password")
 
-# If logged in, show CSV preview
+# If logged in, show CSV preview with filter option
 if st.session_state.logged_in:
     st.success("Welcome!")
 
-    # Load CSV file (make sure 'data.csv' is in the same folder as Streamlit.py)
-    df = pd.read_csv("ATF_Streamlit.csv")
+    # Load CSV
+    df = pd.read_csv("data.csv")
 
-    # Show only first 10 rows
-    st.write("Here are the first 10 rows from the CSV:")
-    st.dataframe(df.head(10))
+    # Search input
+    search_term = st.text_input("Enter a keyword to search:")
+
+    if search_term:
+        # Case-insensitive search across all columns
+        mask = df.apply(lambda row: row.astype(str).str.contains(search_term, case=False).any(), axis=1)
+        filtered_df = df[mask]
+        st.write(f"Found {len(filtered_df)} matching rows:")
+        st.dataframe(filtered_df)
+    else:
+        st.write("Showing first 10 rows (no filter applied):")
+        st.dataframe(df.head(10))
