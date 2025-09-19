@@ -45,7 +45,7 @@ if st.session_state.logged_in:
     # Example link: https://drive.google.com/file/d/FILE_ID/view?usp=sharing
     # Convert to direct download link:
     file_id = "1d90WrUEycbzltBbwpcjeksjA9CkPf0n9"
-    csv_url = f"https://drive.google.com/uc?id={file_id}"
+    csv_url = f"https://drive.google.com/uc?export=download&id={file_id}"
 
     # Read CSV
     df = pd.read_csv(csv_url, dtype=str)
