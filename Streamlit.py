@@ -61,6 +61,7 @@ if uploaded_file is not None:
                 lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
             ).any(axis=1)
             df_matched = df[mask]
+            
             # Drop any fully empty rows just in case
             df_matched = df_matched.dropna(how="all")
 
@@ -69,7 +70,12 @@ if uploaded_file is not None:
 
             # Display table
             num_matches = len(df_display)
-
+            if num_matches <= 50:
+            st.table(df_display)
+            else:
+            table_height = min(35 * num_matches, 1000)
+            st.dataframe(df_display, height=table_height, width=1200)
+    
             if not df_matched.empty:
                 st.success(f"Found {len(df_matched)} matching rows.")
                 st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
@@ -90,8 +96,4 @@ if uploaded_file is not None:
             
 
 
-if num_matches <= 50:
-    st.table(df_display)
-else:
-    table_height = min(35 * num_matches, 1000)
-    st.dataframe(df_display, height=table_height, width=1200)
+
