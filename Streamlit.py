@@ -9,7 +9,8 @@ try:
     import pyxlsb
     from pyxlsb import open_workbook
 except ImportError:
-    pyxlsb = None
+    st.error("Missing 'pyxlsb'. Install with: pip install pyxlsb")
+    st.stop()
 
 # -----------------------------
 # Hide Streamlit UI elements
@@ -26,7 +27,6 @@ header {visibility: hidden;}
 # Password protection
 # -----------------------------
 PASSWORD = "myStrongPassword123"
-
 if "logged_in" not in st.session_state:
     st.session_state.logged_in = False
 
@@ -47,80 +47,49 @@ st.success("Welcome!")
 # -----------------------------
 uploaded_file = st.file_uploader("Upload XLSB file", type=["xlsb"])
 
-# -----------------------------
-# Read only filter columns to find matching rows
-# -----------------------------
-@st.cache_data
-def read_filter_columns(file_bytes, filter_cols):
-    with open_workbook(file_bytes) as wb:
-        sheet = wb.get_sheet(1)
-        header_row = next(sheet.rows())
-        header = [cell.v for cell in header_row]
-
-        # Ensure filter columns exist
-        col_indices = [header.index(col) for col in filter_cols]
-
-        # Read only filter columns
-        rows = [[row[i].v if row[i].v is not None else "" for i in col_indices] for row in sheet.rows()]
-
-    df_filter = pd.DataFrame(rows, columns=filter_cols).astype(str)
-    return df_filter, header
-
-# -----------------------------
-# Read all columns for matched rows
-# -----------------------------
-@st.cache_data
-def read_matched_rows(file_bytes, matched_indices, all_columns):
-    with open_workbook(file_bytes) as wb:
-        sheet = wb.get_sheet(1)
-        rows = []
-        for i, row in enumerate(sheet.rows()):
-            if i in matched_indices:
-                rows.append([cell.v if cell.v is not None else "" for cell in row])
-    df_matched = pd.DataFrame(rows, columns=all_columns).astype(str)
-    return df_matched
-
-# -----------------------------
-# Main processing
-# -----------------------------
 if uploaded_file is not None:
-    if pyxlsb is None:
-        st.error("Missing 'pyxlsb'. Install with: pip install pyxlsb")
-        st.stop()
-
-    st.info("Reading filter columns (fast)...")
     file_bytes = BytesIO(uploaded_file.read())
-    filter_columns = ["Order ID", "GA08:SO TranID"]
 
-    try:
-        df_filter, all_columns = read_filter_columns(file_bytes, filter_columns)
+    st.info("Please enter the values you want to filter.")
 
-        search_input = st.text_input("Enter Order ID(s) or Transaction ID(s) to filter (comma-separated):")
+    search_input = st.text_input("Enter Order ID(s) or Transaction ID(s), comma-separated:")
 
-        if st.button("Filter") and search_input:
-            search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
+    if st.button("Filter") and search_input:
+        search_terms = [t.strip() for t in search_input.split(",") if t.strip()]
 
-            # Vectorized filtering on filter columns
-            mask = df_filter.apply(
-                lambda col: col.str.contains("|".join(search_terms), case=False, na=False)
-            ).any(axis=1)
+        try:
+            st.info("Scanning XLSB for matching rows (fast, streaming)...")
 
-            matched_indices = df_filter[mask].index.tolist()
+            matched_rows = []
+            with open_workbook(file_bytes) as wb:
+                sheet = wb.get_sheet(1)
+                header_row = next(sheet.rows())
+                header = [cell.v for cell in header_row]
+                filter_cols = ["Order ID", "GA08:SO TranID"]
 
-            if matched_indices:
-                st.info(f"Found {len(matched_indices)} matching rows. Loading full data for these rows...")
+                # Ensure filter columns exist
+                col_indices = [header.index(col) for col in filter_cols]
 
-                df_matched = read_matched_rows(file_bytes, matched_indices, all_columns)
+                # Stream-read XLSB and store only matching rows
+                for i, row in enumerate(sheet.rows()):
+                    values = [row[j].v if row[j].v is not None else "" for j in col_indices]
+                    if any(str(val) in search_terms for val in values):
+                        # Store full row
+                        full_row = [row[k].v if row[k].v is not None else "" for k in range(len(header))]
+                        matched_rows.append(full_row)
 
-                # Display matched rows (all columns)
+            if matched_rows:
+                df_matched = pd.DataFrame(matched_rows, columns=header).astype(str)
+                st.success(f"Found {len(df_matched)} matching rows.")
+
+                # Display matched rows
                 st.dataframe(df_matched.reset_index(drop=True), height=500, width=1200)
 
-                # Optional: allow download
-                csv_data = df_matched.to_csv(index=False).encode('utf-8')
+                # Download option
+                csv_data = df_matched.to_csv(index=False).encode("utf-8")
                 st.download_button("Download matched rows as CSV", csv_data, "matched_rows.csv", "text/csv")
-
             else:
                 st.warning("No matching rows found.")
 
-    except Exception as e:
-        st.error(f"Error processing XLSB file: {e}")
+        except Exception as e:
+            st.error(f"Error processing XLSB: {e}")
