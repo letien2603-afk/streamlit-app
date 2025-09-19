@@ -1,6 +1,20 @@
 import streamlit as st
 import pandas as pd
 
+# Hide Streamlit header and menu icons
+hide_streamlit_style = """
+    <style>
+    /* Hide the entire menu & header bar */
+    header, footer, .css-18e3th9 {
+        visibility: hidden;
+    }
+    </style>
+"""
+st.markdown(hide_streamlit_style, unsafe_allow_html=True)
+
+st.title("My App")
+st.dataframe([[1,2,3],[4,5,6]])
+
 # Set your password here
 PASSWORD = "myStrongPassword123"
 
