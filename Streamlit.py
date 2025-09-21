@@ -112,7 +112,7 @@ if uploaded_file is not None:
 
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
-                st.dataframe(df_matched_ids.head(10).reset_index(drop=True))
+                st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
                 #st.dataframe(df_matched_ids.reset_index(drop=True), height=500, width=1200)
                 csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
                 st.download_button(
@@ -160,7 +160,8 @@ if uploaded_file is not None:
 
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
-                st.dataframe(df_matched_names.reset_index(drop=True), height=500, width=1200)
+                st.dataframe(df_matched_names.head(11).reset_index(drop=True))
+                #st.dataframe(df_matched_names.reset_index(drop=True), height=500, width=1200)
                 csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched Names/Products to CSV",
