@@ -86,7 +86,7 @@ if uploaded_file is not None:
         month_options = sorted(df["Month"].dropna().unique())
         selected_months = st.multiselect("Select Month(s):", month_options)
 
-        if selected_months:
+        if not selected_months.empty:
             df_month_filtered = df[df["Month"].isin(selected_months)]
             st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
             st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
