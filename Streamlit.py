@@ -43,10 +43,13 @@ if not st.session_state.logged_in:
             st.error("Incorrect password")
     st.stop()
 
+# -----------------------------
+# Welcome message with week of month
+# -----------------------------
 today = datetime.today()
 first_day = today.replace(day=1)
 week_of_month = (today.day + first_day.weekday()) // 7 + 1
-month_name = today.strftime("%B")  # Full month name, e.g., "September"
+month_name = today.strftime("%B")
 
 st.success(f"Welcome to the ATF file - **Week {week_of_month} of {month_name}**.")
 
@@ -75,6 +78,31 @@ if uploaded_file is not None:
         )
 
     # -----------------------------
+    # Section: Month Slicer (independent filter)
+    # -----------------------------
+    st.subheader("Filter by Month")
+
+    if "Month" in df.columns:
+        month_options = sorted(df["Month"].dropna().unique())
+        selected_months = st.multiselect("Select Month(s):", month_options)
+
+        if selected_months:
+            df_month_filtered = df[df["Month"].isin(selected_months)]
+            st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+            st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+            csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+            st.download_button(
+                "Download Month Filtered Rows to CSV",
+                csv_data_month,
+                "matched_rows_month.csv",
+                "text/csv"
+            )
+        else:
+            st.info("Select one or more Month(s) above to filter the data.")
+    else:
+        st.warning("No 'Month' column found in the uploaded file.")
+
+    # -----------------------------
     # Section 1: Filter by IDs
     # -----------------------------
     st.subheader("Filter IDs")
@@ -83,7 +111,7 @@ if uploaded_file is not None:
             "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
         )
         submit_ids = st.form_submit_button("Filter IDs")
-    
+
     if submit_ids:
         if search_input_ids.strip() == "":
             st.warning("Please enter at least one search term for Section 1.")
@@ -105,15 +133,11 @@ if uploaded_file is not None:
                 lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
             ).any(axis=1)
 
-            # Remove rows that are completely empty across filter columns
-            #mask_ids = mask_ids & df[filter_cols_ids].apply(lambda row: row.str.strip().replace('', pd.NA).notna().any(), axis=1)
-
             df_matched_ids = df[mask_ids]
 
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                #st.dataframe(df_matched_ids.reset_index(drop=True), height=500, width=1200)
                 csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched IDs to CSV",
@@ -152,16 +176,12 @@ if uploaded_file is not None:
             mask_names = df[filter_cols_names].apply(
                 lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
             ).any(axis=1)
-            
-            # Remove rows that are completely empty across filter columns
-            mask_names = mask_names & df[filter_cols_names].apply(lambda row: row.str.strip().replace('', pd.NA).notna().any(), axis=1)
 
             df_matched_names = df[mask_names]
 
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                #st.dataframe(df_matched_names.reset_index(drop=True), height=500, width=1200)
                 csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched Names/Products to CSV",
