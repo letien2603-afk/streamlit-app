@@ -82,7 +82,7 @@ if uploaded_file is not None:
     # -----------------------------
     st.subheader("Filter by Month")
 
-with st.form("form_month"):
+    with st.form("form_month"):
     if "Month" in df.columns:
         month_options = sorted(df["Month"].dropna().unique())
         selected_months = st.multiselect("Select Month(s):", month_options)
