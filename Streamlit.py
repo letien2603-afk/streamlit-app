@@ -54,6 +54,16 @@ month_name = today.strftime("%B")
 st.success(f"Welcome to the ATF file - **Week {week_of_month} of {month_name}**.")
 
 # -----------------------------
+# Full ATF Access
+# -----------------------------
+st.subheader("Full ATF Access")
+if st.button("Show Google Drive Link for Full ATF"):
+    st.markdown(
+        '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
+        unsafe_allow_html=True
+    )
+        
+# -----------------------------
 # Upload Parquet file
 # -----------------------------
 uploaded_file = st.file_uploader("Upload the ATF Parquet file", type=["parquet"])
@@ -66,16 +76,6 @@ if uploaded_file is not None:
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
-
-    # -----------------------------
-    # Full ATF Access
-    # -----------------------------
-    st.subheader("Full ATF Access")
-    if st.button("Show Google Drive Link for Full ATF"):
-        st.markdown(
-            '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
-            unsafe_allow_html=True
-        )
 
     # -----------------------------
     # Section: Month Slicer (independent filter)
