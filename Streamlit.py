@@ -4,10 +4,11 @@ from io import BytesIO
 from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import numbers
+import gc
 
 st.set_page_config(
-    page_title="ATF App",                 
-    layout="wide"                    
+    page_title="ATF App",
+    layout="wide"
 )
 
 # -----------------------------
@@ -90,7 +91,7 @@ if st.button("Show Google Drive Link for Full ATF"):
         '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
         unsafe_allow_html=True
     )
-        
+
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
@@ -101,41 +102,17 @@ if uploaded_file is not None:
         parquet_bytes = BytesIO(uploaded_file.read())
         df = pd.read_parquet(parquet_bytes, engine="pyarrow")
         st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
+
+        # Free memory from uploaded file object
+        parquet_bytes.close()
+        del parquet_bytes
+        del uploaded_file
+        gc.collect()
+
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
 
-    # -----------------------------
-    # Section: Month Slicer
-    # -----------------------------
-    #st.subheader("Filter by Month")
-    #df_month_filtered = pd.DataFrame()
-    #if "Month" in df.columns:
-    #    with st.form("form_month"):
-    #        month_options = sorted(df["Month"].dropna().unique())
-    #        selected_months = st.multiselect("Select Month(s):", month_options)
-    #        submit_month = st.form_submit_button("Filter Month(s)")
-
-    #    if submit_month:
-    #        if selected_months:
-    #            df_month_filtered = df[df["Month"].isin(selected_months)]
-    #            if not df_month_filtered.empty:
-    #                st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
-    #                st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-    #                excel_data_month = convert_df_to_excel(df_month_filtered)
-    #                st.download_button(
-    #                    "Download Month Filtered Rows to Excel",
-    #                    excel_data_month,
-    #                    "matched_rows_month.xlsx",
-    #                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    #                )
-    #            else:
-    #                st.warning("No matching rows found for the selected Month(s).")
-    #        else:
-    #            st.warning("Please select at least one Month before clicking Filter.")
-    #else:
-    #    st.warning("No 'Month' column found in the uploaded file.")
-        
     # -----------------------------
     # Section 1: Filter by IDs
     # -----------------------------
@@ -172,17 +149,20 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                
+
                 # Limit to 10,000 rows for download
                 df_limited_ids = df_matched_ids.head(10000)
 
-                excel_data_ids = convert_df_to_excel(df_matched_ids)
+                excel_data_ids = convert_df_to_excel(df_limited_ids)
                 st.download_button(
                     "Download to Excel\n(up to 10,000 records will be exported)",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+                del df_matched_ids, df_limited_ids
+                gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
 
@@ -220,16 +200,19 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                
+
                 # Limit to 10,000 rows for download
                 df_limited_names = df_matched_names.head(10000)
-                
-                excel_data_names = convert_df_to_excel(df_matched_names)
+
+                excel_data_names = convert_df_to_excel(df_limited_names)
                 st.download_button(
-                    "Download to Excel\n(up to 10,0000 records will be exported)",
+                    "Download to Excel\n(up to 10,000 records will be exported)",
                     excel_data_names,
                     "matched_rows_section2.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+                del df_matched_names, df_limited_names
+                gc.collect()
             else:
                 st.warning("No matching rows found in Section 2.")
