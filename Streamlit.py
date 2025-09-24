@@ -5,17 +5,50 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import numbers
 
-# -----------------------------
-# Caching Functions
-# -----------------------------
-@st.cache_data
-def load_data(file_bytes):
-    """Caches the dataframe to prevent reloading on every user interaction."""
-    return pd.read_parquet(BytesIO(file_bytes), engine="pyarrow")
+st.set_page_config(
+    page_title="ATF App",                 
+    layout="wide"                    
+)
 
-@st.cache_data
+# -----------------------------
+# Hide Streamlit UI elements and remove top padding
+# -----------------------------
+st.markdown("""
+<style>
+/* Hide default Streamlit header/footer */
+footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
+#MainMenu {visibility: hidden;}
+header {visibility: hidden;}
+
+/* Remove top padding / margin */
+.block-container {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+}
+</style>
+""", unsafe_allow_html=True)
+
+# -----------------------------
+# Password protection
+# -----------------------------
+PASSWORD = "Callidus123"
+if "logged_in" not in st.session_state:
+    st.session_state.logged_in = False
+
+if not st.session_state.logged_in:
+    password = st.text_input("Enter password:", type="password")
+    if st.button("Login"):
+        if password == PASSWORD:
+            st.session_state.logged_in = True
+            st.rerun()
+        else:
+            st.error("Incorrect password")
+    st.stop()
+
+# -----------------------------
+# Helper: Convert DataFrame to Excel with all cells as text
+# -----------------------------
 def convert_df_to_excel(df: pd.DataFrame) -> bytes:
-    """Caches the Excel file generation. This is only called when needed."""
     wb = Workbook()
     ws = wb.active
 
@@ -39,45 +72,8 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     return output.getvalue()
 
 # -----------------------------
-# Main App Layout and Logic
-# -----------------------------
-st.set_page_config(
-    page_title="ATF App",
-    layout="wide"
-)
-
-# Hide Streamlit UI elements and remove top padding
-st.markdown("""
-<style>
-/* Hide default Streamlit header/footer */
-footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
-#MainMenu {visibility: hidden;}
-header {visibility: hidden;}
-
-/* Remove top padding / margin */
-.block-container {
-    padding-top: 0rem;
-    padding-bottom: 0rem;
-}
-</style>
-""", unsafe_allow_html=True)
-
-# Password protection
-PASSWORD = "Callidus123"
-if "logged_in" not in st.session_state:
-    st.session_state.logged_in = False
-
-if not st.session_state.logged_in:
-    password = st.text_input("Enter password:", type="password")
-    if st.button("Login"):
-        if password == PASSWORD:
-            st.session_state.logged_in = True
-            st.rerun()
-        else:
-            st.error("Incorrect password")
-    st.stop()
-
 # Welcome message with week of month
+# -----------------------------
 today = datetime.today()
 first_day = today.replace(day=1)
 week_of_month = (today.day + first_day.weekday()) // 7 + 1
@@ -85,7 +81,9 @@ month_name = today.strftime("%B")
 
 st.success(f"Welcome to the ATF file - **Week {week_of_month} of {month_name}**.")
 
+# -----------------------------
 # Full ATF Access
+# -----------------------------
 st.subheader("Full ATF Access")
 if st.button("Show Google Drive Link for Full ATF"):
     st.markdown(
@@ -93,18 +91,54 @@ if st.button("Show Google Drive Link for Full ATF"):
         unsafe_allow_html=True
     )
         
+# -----------------------------
 # Upload Parquet file
+# -----------------------------
 uploaded_file = st.file_uploader("Upload the ATF Parquet file", type=["parquet"])
 
 if uploaded_file is not None:
     try:
-        df = load_data(uploaded_file.read())
+        parquet_bytes = BytesIO(uploaded_file.read())
+        df = pd.read_parquet(parquet_bytes, engine="pyarrow")
         st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
 
+    # -----------------------------
+    # Section: Month Slicer
+    # -----------------------------
+    #st.subheader("Filter by Month")
+    #df_month_filtered = pd.DataFrame()
+    #if "Month" in df.columns:
+    #    with st.form("form_month"):
+    #        month_options = sorted(df["Month"].dropna().unique())
+    #        selected_months = st.multiselect("Select Month(s):", month_options)
+    #        submit_month = st.form_submit_button("Filter Month(s)")
+
+    #    if submit_month:
+    #        if selected_months:
+    #            df_month_filtered = df[df["Month"].isin(selected_months)]
+    #            if not df_month_filtered.empty:
+    #                st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+    #                st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+    #                excel_data_month = convert_df_to_excel(df_month_filtered)
+    #                st.download_button(
+    #                    "Download Month Filtered Rows to Excel",
+    #                    excel_data_month,
+    #                    "matched_rows_month.xlsx",
+    #                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    #                )
+    #            else:
+    #                st.warning("No matching rows found for the selected Month(s).")
+    #        else:
+    #            st.warning("Please select at least one Month before clicking Filter.")
+    #else:
+    #    st.warning("No 'Month' column found in the uploaded file.")
+        
+    # -----------------------------
     # Section 1: Filter by IDs
+    # -----------------------------
     st.subheader("Filter IDs")
     with st.form("form_ids"):
         search_input_ids = st.text_input(
@@ -125,19 +159,15 @@ if uploaded_file is not None:
                 "Billing Customer ID",
                 "Other Customer ID"
             ]
-
-            # Build a list of boolean masks using efficient pandas methods
-            masks = []
-            search_pattern_ids = "|".join(search_terms_ids)
             for col in filter_cols_ids:
                 if col in df.columns:
-                    masks.append(df[col].astype(str).str.contains(search_pattern_ids, case=False, na=False))
-            
-            if masks:
-                combined_mask_ids = pd.concat(masks, axis=1).any(axis=1)
-                df_matched_ids = df[combined_mask_ids]
-            else:
-                df_matched_ids = pd.DataFrame()
+                    df[col] = df[col].astype(str)
+
+            mask_ids = df[filter_cols_ids].apply(
+                lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
+            ).any(axis=1)
+
+            df_matched_ids = df[mask_ids]
 
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
@@ -152,7 +182,9 @@ if uploaded_file is not None:
             else:
                 st.warning("No matching rows found in Section 1.")
 
+    # -----------------------------
     # Section 2: Filter by Names / Products
+    # -----------------------------
     st.subheader("Filter Names / Products")
     with st.form("form_names"):
         search_input_names = st.text_input(
@@ -171,19 +203,15 @@ if uploaded_file is not None:
                 "Other Company",
                 "Product ID"
             ]
-            
-            # Build a list of boolean masks using efficient pandas methods
-            masks = []
-            search_pattern_names = "|".join(search_terms_names)
             for col in filter_cols_names:
                 if col in df.columns:
-                    masks.append(df[col].astype(str).str.contains(search_pattern_names, case=False, na=False))
-            
-            if masks:
-                combined_mask_names = pd.concat(masks, axis=1).any(axis=1)
-                df_matched_names = df[combined_mask_names]
-            else:
-                df_matched_names = pd.DataFrame()
+                    df[col] = df[col].astype(str)
+
+            mask_names = df[filter_cols_names].apply(
+                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
+            ).any(axis=1)
+
+            df_matched_names = df[mask_names]
 
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
