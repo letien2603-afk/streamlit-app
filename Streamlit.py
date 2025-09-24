@@ -192,7 +192,7 @@ if uploaded_file is not None:
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-                del df_matched_ids, df_limited_ids
+                del df_matched_ids
                 gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
@@ -243,7 +243,7 @@ if uploaded_file is not None:
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
 
-                del df_matched_names, df_limited_names
+                del df_matched_names
                 gc.collect()
             else:
                 st.warning("No matching rows found in Section 2.")
