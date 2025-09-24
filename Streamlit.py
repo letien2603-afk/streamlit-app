@@ -121,11 +121,11 @@ if uploaded_file is not None:
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
-            selected_months = st.selectbox("Select Month(s):", month_options)
+            selected_month = st.selectbox("Select Month(s):", month_options)
             submit_month = st.form_submit_button("Filter Month(s)")
 
         if submit_month:
-            if selected_months:
+            if selected_month:
                 df_month_filtered = df[df["Month"] == selected_month]
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
