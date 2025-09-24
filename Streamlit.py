@@ -182,11 +182,11 @@ if uploaded_file is not None:
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
 
                 # Limit to 10,000 rows for download
-                df_limited_ids = df_matched_ids.head(10000)
+                #df_limited_ids = df_matched_ids.head(10000)
 
-                excel_data_ids = convert_df_to_excel(df_limited_ids)
+                excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
-                    "Download to Excel\n(up to 10,000 records will be exported)",
+                    "Download to Excel",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -233,11 +233,11 @@ if uploaded_file is not None:
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
 
                 # Limit to 10,000 rows for download
-                df_limited_names = df_matched_names.head(10000)
+                #df_limited_names = df_matched_names.head(10000)
 
-                excel_data_names = convert_df_to_excel(df_limited_names)
+                excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
-                    "Download to Excel\n(up to 10,000 records will be exported)",
+                    "Download to Excel",
                     excel_data_names,
                     "matched_rows_section2.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
