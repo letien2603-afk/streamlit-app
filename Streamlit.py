@@ -4,8 +4,8 @@ from io import BytesIO
 from datetime import datetime
 
 st.set_page_config(
-    page_title="ATF App",                 
-    layout="wide"                    
+    page_title="ATF App",
+    layout="wide"
 )
 
 # -----------------------------
@@ -44,6 +44,36 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
+# Helpers: CSV and Excel exporters (in-memory)
+# -----------------------------
+def df_to_csv_bytes(df: pd.DataFrame) -> bytes:
+    # Replace None/NaN with empty string and cast to str
+    df_clean = df.fillna("").astype(str).replace("None", "")
+    return df_clean.to_csv(index=False).encode("utf-8")
+
+
+def df_to_xlsx_bytes(df: pd.DataFrame) -> bytes:
+    """
+    Write df to an XLSX (bytes). Force text format for all columns so Excel preserves leading zeros.
+    """
+    df_clean = df.fillna("").astype(str).replace("None", "")
+    output = BytesIO()
+    # using xlsxwriter engine
+    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
+        df_clean.to_excel(writer, index=False, sheet_name="Sheet1")
+        workbook = writer.book
+        worksheet = writer.sheets["Sheet1"]
+
+        # Force text format for all columns (num_format '@')
+        if len(df_clean.columns) > 0:
+            text_fmt = workbook.add_format({"num_format": "@"})
+            worksheet.set_column(0, len(df_clean.columns) - 1, 20, text_fmt)
+
+    output.seek(0)
+    return output.getvalue()
+
+
+# -----------------------------
 # Welcome message with week of month
 # -----------------------------
 today = datetime.today()
@@ -62,7 +92,7 @@ if st.button("Show Google Drive Link for Full ATF"):
         '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
         unsafe_allow_html=True
     )
-        
+
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
@@ -78,7 +108,7 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Section: Month Slicer (independent filter)
+    # Section: Month Slicer (independent filter) - CSV
     # -----------------------------
     st.subheader("Filter by Month")
     df_month_filtered = pd.DataFrame()  # placeholder for results
@@ -93,8 +123,11 @@ if uploaded_file is not None:
                 df_month_filtered = df[df["Month"].isin(selected_months)]
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+                    # preview only first 11 rows to avoid UI overload
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+
+                    # CSV download (lightweight)
+                    csv_data_month = df_to_csv_bytes(df_month_filtered)
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
                         csv_data_month,
@@ -107,9 +140,9 @@ if uploaded_file is not None:
                 st.warning("Please select at least one Month before clicking Filter.")
     else:
         st.warning("No 'Month' column found in the uploaded file.")
-        
+
     # -----------------------------
-    # Section 1: Filter by IDs
+    # Section 1: Filter by IDs - XLSX download
     # -----------------------------
     st.subheader("Filter IDs")
     with st.form("form_ids"):
@@ -144,18 +177,31 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download Matched IDs to CSV",
-                    csv_data_ids,
-                    "matched_rows_section1.csv",
-                    "text/csv"
-                )
+
+                # XLSX export (in-memory)
+                try:
+                    xlsx_data_ids = df_to_xlsx_bytes(df_matched_ids)
+                    st.download_button(
+                        "Download Matched IDs to Excel",
+                        xlsx_data_ids,
+                        "matched_rows_section1.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                except Exception as e:
+                    st.error(f"Failed to generate Excel file: {e}")
+                    # fallback to CSV if xlsx fails
+                    csv_data_ids = df_to_csv_bytes(df_matched_ids)
+                    st.download_button(
+                        "Download Matched IDs to CSV (fallback)",
+                        csv_data_ids,
+                        "matched_rows_section1.csv",
+                        "text/csv"
+                    )
             else:
                 st.warning("No matching rows found in Section 1.")
 
     # -----------------------------
-    # Section 2: Filter by Names / Products
+    # Section 2: Filter by Names / Products - XLSX download
     # -----------------------------
     st.subheader("Filter Names / Products")
     with st.form("form_names"):
@@ -188,12 +234,25 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
-                st.download_button(
-                    "Download Matched Names/Products to CSV",
-                    csv_data_names,
-                    "matched_rows_section2.csv",
-                    "text/csv"
-                )
+
+                # XLSX export (in-memory)
+                try:
+                    xlsx_data_names = df_to_xlsx_bytes(df_matched_names)
+                    st.download_button(
+                        "Download Matched Names/Products to Excel",
+                        xlsx_data_names,
+                        "matched_rows_section2.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    )
+                except Exception as e:
+                    st.error(f"Failed to generate Excel file: {e}")
+                    # fallback to CSV if xlsx fails
+                    csv_data_names = df_to_csv_bytes(df_matched_names)
+                    st.download_button(
+                        "Download Matched Names/Products to CSV (fallback)",
+                        csv_data_names,
+                        "matched_rows_section2.csv",
+                        "text/csv"
+                    )
             else:
                 st.warning("No matching rows found in Section 2.")
