@@ -92,8 +92,8 @@ if uploaded_file is not None:
         st.stop()
 
 # -----------------------------
-# Section: Month Slicer (independent filter)
-# -----------------------------
+    # Section: Month Slicer (independent filter)
+    # -----------------------------
     st.subheader("Filter by Month")
     df_month_filtered = pd.DataFrame()  # placeholder for results
     if "Month" in df.columns:
