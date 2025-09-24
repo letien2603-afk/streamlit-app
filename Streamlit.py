@@ -2,6 +2,8 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
+from openpyxl import Workbook
+from openpyxl.styles import numbers
 
 st.set_page_config(
     page_title="ATF App",                 
@@ -44,6 +46,29 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
+# Helper: Convert DataFrame to Excel with all cells as text
+# -----------------------------
+def convert_df_to_excel(df: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+
+    # Write header
+    ws.append(df.columns.tolist())
+
+    # Write rows as text
+    for row in df.astype(str).to_numpy().tolist():
+        ws.append(row)
+
+    # Force text format for all cells
+    for col in ws.columns:
+        for cell in col:
+            cell.number_format = numbers.FORMAT_TEXT
+
+    output = BytesIO()
+    wb.save(output)
+    return output.getvalue()
+
+# -----------------------------
 # Welcome message with week of month
 # -----------------------------
 today = datetime.today()
@@ -78,10 +103,10 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Section: Month Slicer (independent filter)
+    # Section: Month Slicer
     # -----------------------------
     st.subheader("Filter by Month")
-    df_month_filtered = pd.DataFrame()  # placeholder for results
+    df_month_filtered = pd.DataFrame()
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
@@ -94,12 +119,12 @@ if uploaded_file is not None:
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = df_month_filtered.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
+                    excel_data_month = convert_df_to_excel(df_month_filtered)
                     st.download_button(
-                        "Download Month Filtered Rows to CSV",
-                        csv_data_month,
-                        "matched_rows_month.csv",
-                        "text/csv"
+                        "Download Month Filtered Rows to Excel",
+                        excel_data_month,
+                        "matched_rows_month.xlsx",
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                     )
                 else:
                     st.warning("No matching rows found for the selected Month(s).")
@@ -144,12 +169,12 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                csv_data_ids = df_matched_ids.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
+                excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
-                    "Download Matched IDs to CSV",
-                    csv_data_ids,
-                    "matched_rows_section1.csv",
-                    "text/csv"
+                    "Download Matched IDs to Excel",
+                    excel_data_ids,
+                    "matched_rows_section1.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
                 st.warning("No matching rows found in Section 1.")
@@ -188,12 +213,12 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                csv_data_names = df_matched_names.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
+                excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
-                    "Download Matched Names/Products to CSV",
-                    csv_data_names,
-                    "matched_rows_section2.csv",
-                    "text/csv"
+                    "Download Matched Names/Products to Excel",
+                    excel_data_names,
+                    "matched_rows_section2.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
             else:
                 st.warning("No matching rows found in Section 2.")
