@@ -122,7 +122,7 @@ if uploaded_file is not None:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
             selected_month = st.selectbox("Select Month:", month_options)
-            submit_month = st.form_submit_button("Filter Month(s)")
+            submit_month = st.form_submit_button("Filter Month")
 
         if submit_month:
             if selected_month:
