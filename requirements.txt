@@ -3,3 +3,4 @@ pandas
 pyxlsb
 gdown
 openpyxl
+xlsxwriter
