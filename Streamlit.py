@@ -94,82 +94,82 @@ if uploaded_file is not None:
     # -----------------------------
     # Section: Month Slicer (independent filter)
     # -----------------------------
-    st.subheader("Filter by Month")
-    df_month_filtered = pd.DataFrame()  # placeholder for results
-    if "Month" in df.columns:
-        with st.form("form_month"):
-            month_options = sorted(df["Month"].dropna().unique())
-            selected_month = st.selectbox("Select Month:", month_options)
-            submit_month = st.form_submit_button("Filter Month")
+    #st.subheader("Filter by Month")
+    #df_month_filtered = pd.DataFrame()  # placeholder for results
+    #if "Month" in df.columns:
+    #    with st.form("form_month"):
+    #        month_options = sorted(df["Month"].dropna().unique())
+    #        selected_month = st.selectbox("Select Month:", month_options)
+    #        submit_month = st.form_submit_button("Filter Month")
 
-        if submit_month:
-            if selected_month:
-                df_month_filtered = df[df["Month"] == selected_month]
-                if not df_month_filtered.empty:
-                    st.success(f"Found {len(df_month_filtered)} rows for selected Month: {selected_month}.")
-                    st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+    #    if submit_month:
+    #        if selected_month:
+    #            df_month_filtered = df[df["Month"] == selected_month]
+    #            if not df_month_filtered.empty:
+    #                st.success(f"Found {len(df_month_filtered)} rows for selected Month: {selected_month}.")
+    #                st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
 
                     # 🔹 Keep as CSV or switch to XLSX if you prefer
-                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
-                    st.download_button(
-                        "Download Month Filtered Rows to CSV",
-                        csv_data_month,
-                        f"matched_rows_month_{selected_month}.csv",
-                        "text/csv"
-                    )
-                else:
-                    st.warning("No matching rows found for the selected Month.")
-            else:
-                st.warning("Please select a Month before clicking Filter.")
-    else:
-        st.warning("No 'Month' column found in the uploaded file.")
+    #                csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+    #                st.download_button(
+    #                    "Download Month Filtered Rows to CSV",
+    #                    csv_data_month,
+    #                    f"matched_rows_month_{selected_month}.csv",
+    #                    "text/csv"
+    #                )
+    #            else:
+    #                st.warning("No matching rows found for the selected Month.")
+    #        else:
+    #            st.warning("Please select a Month before clicking Filter.")
+    #else:
+    #    st.warning("No 'Month' column found in the uploaded file.")
 
     # -----------------------------
     # Section 1: Filter by IDs (XLSX)
     # -----------------------------
-    #st.subheader("Filter IDs")
-    #with st.form("form_ids"):
-    #    search_input_ids = st.text_input(
-    #        "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
-    #    )
-    #    submit_ids = st.form_submit_button("Filter IDs")
+    st.subheader("Filter IDs")
+    with st.form("form_ids"):
+        search_input_ids = st.text_input(
+            "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
+        )
+        submit_ids = st.form_submit_button("Filter IDs")
 
-    #if submit_ids:
-    #    if search_input_ids.strip() == "":
-    #        st.warning("Please enter at least one search term for Section 1.")
-    #    else:
-    #        search_terms_ids = [t.strip() for t in search_input_ids.split(",") if t.strip()]
-    #        filter_cols_ids = [
-    #            "Order ID",
-    #            "GA08:SO TranID",
-    #            "PO Number",
-    #            "GA24: Distribution Sold to System Integrator ID",
-    #            "Billing Customer ID",
-    #            "Other Customer ID"
-    #        ]
-    #        for col in filter_cols_ids:
-    #            if col in df.columns:
-    #                df[col] = df[col].astype(str)
+    if submit_ids:
+        if search_input_ids.strip() == "":
+            st.warning("Please enter at least one search term for Section 1.")
+        else:
+            search_terms_ids = [t.strip() for t in search_input_ids.split(",") if t.strip()]
+            filter_cols_ids = [
+                "Order ID",
+                "GA08:SO TranID",
+                "PO Number",
+                "GA24: Distribution Sold to System Integrator ID",
+                "Billing Customer ID",
+                "Other Customer ID"
+            ]
+            for col in filter_cols_ids:
+                if col in df.columns:
+                    df[col] = df[col].astype(str)
 
-    #        mask_ids = df[filter_cols_ids].apply(
-    #            lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
-    #        ).any(axis=1)
+            mask_ids = df[filter_cols_ids].apply(
+                lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
+            ).any(axis=1)
 
-    #        df_matched_ids = df[mask_ids]
+            df_matched_ids = df[mask_ids]
 
-    #        if not df_matched_ids.empty:
-    #            st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
-    #            st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
+            if not df_matched_ids.empty:
+                st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
+                st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
 
-    #            xlsx_data_ids = df_to_xlsx_bytes(df_matched_ids)
-    #            st.download_button(
-    #                "Download Matched IDs to Excel",
-    #                xlsx_data_ids,
-    #                "matched_rows_section1.xlsx",
-    #                "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    #            )
-    #        else:
-    #            st.warning("No matching rows found in Section 1.")
+                xlsx_data_ids = df_to_xlsx_bytes(df_matched_ids)
+                st.download_button(
+                    "Download Matched IDs to Excel",
+                    xlsx_data_ids,
+                    "matched_rows_section1.xlsx",
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                )
+            else:
+                st.warning("No matching rows found in Section 1.")
 
     # -----------------------------
     # Section 2: Filter by Names / Products (XLSX)
