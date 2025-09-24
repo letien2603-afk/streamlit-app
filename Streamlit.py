@@ -132,7 +132,7 @@ if uploaded_file is not None:
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
                     csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
                     st.download_button(
-                        "Download Month Filtered Rows to CSV",
+                        "Download to CSV",
                         csv_data_month,
                         "matched_rows_month.csv",
                         "text/csv"
@@ -186,7 +186,7 @@ if uploaded_file is not None:
 
                 excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
-                    "Download to Excel",
+                    "Download to Excel-XLSX",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -237,7 +237,7 @@ if uploaded_file is not None:
 
                 excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
-                    "Download to Excel",
+                    "Download to Excel-XLSX",
                     excel_data_names,
                     "matched_rows_section2.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
