@@ -2,10 +2,12 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
+from openpyxl import Workbook
+from openpyxl.styles import numbers
 
 st.set_page_config(
-    page_title="ATF App",
-    layout="wide"
+    page_title="ATF App",                 
+    layout="wide"                    
 )
 
 # -----------------------------
@@ -13,10 +15,16 @@ st.set_page_config(
 # -----------------------------
 st.markdown("""
 <style>
+/* Hide default Streamlit header/footer */
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
-.block-container {padding-top: 0rem; padding-bottom: 0rem;}
+
+/* Remove top padding / margin */
+.block-container {
+    padding-top: 0rem;
+    padding-bottom: 0rem;
+}
 </style>
 """, unsafe_allow_html=True)
 
@@ -38,33 +46,39 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helpers
+# Helper: Convert DataFrame to Excel with all cells as text
 # -----------------------------
-def df_to_csv_bytes(df: pd.DataFrame) -> bytes:
-    df_clean = df.fillna("").astype(str).replace("None", "")
-    return df_clean.to_csv(index=False).encode("utf-8")
+def convert_df_to_excel(df: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
 
-def df_to_xlsx_bytes(df: pd.DataFrame) -> bytes:
+    # Replace None/NaN with empty string and cast to str
     df_clean = df.fillna("").astype(str).replace("None", "")
+
+    # Write header
+    ws.append(df_clean.columns.tolist())
+
+    # Write rows
+    for row in df_clean.to_numpy().tolist():
+        ws.append(row)
+
+    # Force text format for all cells
+    for col in ws.columns:
+        for cell in col:
+            cell.number_format = numbers.FORMAT_TEXT
+
     output = BytesIO()
-    with pd.ExcelWriter(output, engine="xlsxwriter") as writer:
-        df_clean.to_excel(writer, index=False, sheet_name="Sheet1")
-        workbook = writer.book
-        worksheet = writer.sheets["Sheet1"]
-        # Force all columns to text to preserve leading zeros
-        if len(df_clean.columns) > 0:
-            text_fmt = workbook.add_format({"num_format": "@"})
-            worksheet.set_column(0, len(df_clean.columns) - 1, 20, text_fmt)
-    output.seek(0)
-    return output.read()
+    wb.save(output)
+    return output.getvalue()
 
 # -----------------------------
-# Welcome message
+# Welcome message with week of month
 # -----------------------------
 today = datetime.today()
 first_day = today.replace(day=1)
 week_of_month = (today.day + first_day.weekday()) // 7 + 1
 month_name = today.strftime("%B")
+
 st.success(f"Welcome to the ATF file - **Week {week_of_month} of {month_name}**.")
 
 # -----------------------------
@@ -76,7 +90,7 @@ if st.button("Show Google Drive Link for Full ATF"):
         '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
         unsafe_allow_html=True
     )
-
+        
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
@@ -92,40 +106,38 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Section: Month Slicer (independent filter)
+    # Section: Month Slicer
     # -----------------------------
     #st.subheader("Filter by Month")
-    #df_month_filtered = pd.DataFrame()  # placeholder for results
+    #df_month_filtered = pd.DataFrame()
     #if "Month" in df.columns:
     #    with st.form("form_month"):
     #        month_options = sorted(df["Month"].dropna().unique())
-    #        selected_month = st.selectbox("Select Month:", month_options)
-    #        submit_month = st.form_submit_button("Filter Month")
+    #        selected_months = st.multiselect("Select Month(s):", month_options)
+    #        submit_month = st.form_submit_button("Filter Month(s)")
 
     #    if submit_month:
-    #        if selected_month:
-    #            df_month_filtered = df[df["Month"] == selected_month]
+    #        if selected_months:
+    #            df_month_filtered = df[df["Month"].isin(selected_months)]
     #            if not df_month_filtered.empty:
-    #                st.success(f"Found {len(df_month_filtered)} rows for selected Month: {selected_month}.")
+    #                st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
     #                st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-
-                    # 🔹 Keep as CSV or switch to XLSX if you prefer
-    #                csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+    #                excel_data_month = convert_df_to_excel(df_month_filtered)
     #                st.download_button(
-    #                    "Download Month Filtered Rows to CSV",
-    #                    csv_data_month,
-    #                    f"matched_rows_month_{selected_month}.csv",
-    #                    "text/csv"
+    #                    "Download Month Filtered Rows to Excel",
+    #                    excel_data_month,
+    #                    "matched_rows_month.xlsx",
+    #                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     #                )
     #            else:
-    #                st.warning("No matching rows found for the selected Month.")
+    #                st.warning("No matching rows found for the selected Month(s).")
     #        else:
-    #            st.warning("Please select a Month before clicking Filter.")
+    #            st.warning("Please select at least one Month before clicking Filter.")
     #else:
     #    st.warning("No 'Month' column found in the uploaded file.")
-
+        
     # -----------------------------
-    # Section 1: Filter by IDs (XLSX)
+    # Section 1: Filter by IDs
     # -----------------------------
     st.subheader("Filter IDs")
     with st.form("form_ids"):
@@ -160,11 +172,10 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-
-                xlsx_data_ids = df_to_xlsx_bytes(df_matched_ids)
+                excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
                     "Download Matched IDs to Excel",
-                    xlsx_data_ids,
+                    excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
@@ -172,7 +183,7 @@ if uploaded_file is not None:
                 st.warning("No matching rows found in Section 1.")
 
     # -----------------------------
-    # Section 2: Filter by Names / Products (XLSX)
+    # Section 2: Filter by Names / Products
     # -----------------------------
     st.subheader("Filter Names / Products")
     with st.form("form_names"):
@@ -205,11 +216,10 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-
-                xlsx_data_names = df_to_xlsx_bytes(df_matched_names)
+                excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
                     "Download Matched Names/Products to Excel",
-                    xlsx_data_names,
+                    excel_data_names,
                     "matched_rows_section2.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
