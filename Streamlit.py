@@ -126,7 +126,7 @@ if uploaded_file is not None:
 
         if submit_month:
             if selected_months:
-                df_month_filtered = df[df["Month"].isin(selected_months)]
+                df_month_filtered = df[df["Month"] == selected_month]
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
