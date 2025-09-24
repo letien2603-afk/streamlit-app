@@ -44,13 +44,6 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to CSV (keep leading 0s, blank for None)
-# -----------------------------
-def convert_df_to_csv(df: pd.DataFrame) -> bytes:
-    df_clean = df.fillna("").astype(str).replace("None", "")
-    return df_clean.to_csv(index=False, encoding="utf-8", quoting=1).encode("utf-8")
-
-# -----------------------------
 # Welcome message with week of month
 # -----------------------------
 today = datetime.today()
@@ -69,7 +62,7 @@ if st.button("Show Google Drive Link for Full ATF"):
         '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
         unsafe_allow_html=True
     )
-
+        
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
@@ -85,35 +78,36 @@ if uploaded_file is not None:
         st.stop()
 
     # -----------------------------
-    # Section: Month Slicer (only one month allowed)
+    # Section: Month Slicer (independent filter)
     # -----------------------------
     st.subheader("Filter by Month")
+    df_month_filtered = pd.DataFrame()  # placeholder for results
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
-            selected_month = st.selectbox("Select a Month:", month_options)
-            submit_month = st.form_submit_button("Filter Month")
+            selected_months = st.multiselect("Select Month(s):", month_options)
+            submit_month = st.form_submit_button("Filter Month(s)")
 
         if submit_month:
-            if selected_month:
-                df_month_filtered = df[df["Month"] == selected_month]
+            if selected_months:
+                df_month_filtered = df[df["Month"].isin(selected_months)]
                 if not df_month_filtered.empty:
-                    st.success(f"Found {len(df_month_filtered)} rows for selected Month.")
+                    st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = convert_df_to_csv(df_month_filtered)
+                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
                         csv_data_month,
-                        f"matched_rows_{selected_month}.csv",
+                        "matched_rows_month.csv",
                         "text/csv"
                     )
                 else:
-                    st.warning("No matching rows found for the selected Month.")
+                    st.warning("No matching rows found for the selected Month(s).")
             else:
-                st.warning("Please select a Month before clicking Filter.")
+                st.warning("Please select at least one Month before clicking Filter.")
     else:
         st.warning("No 'Month' column found in the uploaded file.")
-
+        
     # -----------------------------
     # Section 1: Filter by IDs
     # -----------------------------
@@ -150,7 +144,7 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                csv_data_ids = convert_df_to_csv(df_matched_ids)
+                csv_data_ids = df_matched_ids.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched IDs to CSV",
                     csv_data_ids,
@@ -194,7 +188,7 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                csv_data_names = convert_df_to_csv(df_matched_names)
+                csv_data_names = df_matched_names.to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched Names/Products to CSV",
                     csv_data_names,
