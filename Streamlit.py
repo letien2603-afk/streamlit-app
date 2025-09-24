@@ -1,6 +1,6 @@
 import streamlit as st
 import pandas as pd
-from io import BytesIO, StringIO
+from io import BytesIO
 from datetime import datetime
 
 st.set_page_config(
@@ -44,16 +44,19 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to CSV (preserve leading 0s, no apostrophe)
+# Helper: Convert DataFrame to CSV safely
 # -----------------------------
 def convert_df_to_csv(df: pd.DataFrame) -> bytes:
-    # Replace None/NaN with empty string
+    # Replace None/NaN with empty string and keep as str
     df_clean = df.fillna("").astype(str).replace("None", "")
+    return df_clean.to_csv(index=False, quoting=1).encode("utf-8")
 
-    # Export to CSV (no apostrophe hack)
-    output = StringIO()
-    df_clean.to_csv(output, index=False, quoting=1)  # quoting=1 = QUOTE_ALL
-    return output.getvalue().encode("utf-8")
+# -----------------------------
+# Cached filter for performance
+# -----------------------------
+@st.cache_data
+def filter_by_month(df, selected_months):
+    return df[df["Month"].isin(selected_months)]
 
 # -----------------------------
 # Welcome message with week of month
@@ -102,12 +105,17 @@ if uploaded_file is not None:
 
         if submit_month:
             if selected_months:
-                df_month_filtered = df[df["Month"].isin(selected_months)]
+                df_month_filtered = filter_by_month(df, selected_months)
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
-                    st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
 
-                    # ✅ Export to CSV
+                    # ✅ Only preview 11 rows if small enough
+                    if len(df_month_filtered) <= 50_000:
+                        st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+                    else:
+                        st.info("Large dataset (>50k rows). Skipping preview to save memory.")
+
+                    # ✅ Always allow full CSV download
                     csv_data_month = convert_df_to_csv(df_month_filtered)
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
@@ -121,97 +129,3 @@ if uploaded_file is not None:
                 st.warning("Please select at least one Month before clicking Filter.")
     else:
         st.warning("No 'Month' column found in the uploaded file.")
-        
-    # -----------------------------
-    # Section 1: Filter by IDs
-    # -----------------------------
-    st.subheader("Filter IDs")
-    with st.form("form_ids"):
-        search_input_ids = st.text_input(
-            "Enter Order ID, GA08:SO TranID, PO Number, GA24: Distribution Sold to System Integrator ID, Billing Customer ID, Other Customer ID (comma-separated):"
-        )
-        submit_ids = st.form_submit_button("Filter IDs")
-
-    if submit_ids:
-        if search_input_ids.strip() == "":
-            st.warning("Please enter at least one search term for Section 1.")
-        else:
-            search_terms_ids = [t.strip() for t in search_input_ids.split(",") if t.strip()]
-            filter_cols_ids = [
-                "Order ID",
-                "GA08:SO TranID",
-                "PO Number",
-                "GA24: Distribution Sold to System Integrator ID",
-                "Billing Customer ID",
-                "Other Customer ID"
-            ]
-            for col in filter_cols_ids:
-                if col in df.columns:
-                    df[col] = df[col].astype(str)
-
-            mask_ids = df[filter_cols_ids].apply(
-                lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
-            ).any(axis=1)
-
-            df_matched_ids = df[mask_ids]
-
-            if not df_matched_ids.empty:
-                st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
-                st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-
-                # ✅ Export to CSV
-                csv_data_ids = convert_df_to_csv(df_matched_ids)
-                st.download_button(
-                    "Download Matched IDs to CSV",
-                    csv_data_ids,
-                    "matched_rows_section1.csv",
-                    "text/csv"
-                )
-            else:
-                st.warning("No matching rows found in Section 1.")
-
-    # -----------------------------
-    # Section 2: Filter by Names / Products
-    # -----------------------------
-    st.subheader("Filter Names / Products")
-    with st.form("form_names"):
-        search_input_names = st.text_input(
-            "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
-        )
-        submit_names = st.form_submit_button("Filter Names/Products")
-
-    if submit_names:
-        if search_input_names.strip() == "":
-            st.warning("Please enter at least one search term for Section 2.")
-        else:
-            search_terms_names = [t.strip() for t in search_input_names.split(",") if t.strip()]
-            filter_cols_names = [
-                "GA25: Distribution Sold to System Integrator Name",
-                "Billing Company",
-                "Other Company",
-                "Product ID"
-            ]
-            for col in filter_cols_names:
-                if col in df.columns:
-                    df[col] = df[col].astype(str)
-
-            mask_names = df[filter_cols_names].apply(
-                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
-            ).any(axis=1)
-
-            df_matched_names = df[mask_names]
-
-            if not df_matched_names.empty:
-                st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
-                st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-
-                # ✅ Export to CSV
-                csv_data_names = convert_df_to_csv(df_matched_names)
-                st.download_button(
-                    "Download Matched Names/Products to CSV",
-                    csv_data_names,
-                    "matched_rows_section2.csv",
-                    "text/csv"
-                )
-            else:
-                st.warning("No matching rows found in Section 2.")
