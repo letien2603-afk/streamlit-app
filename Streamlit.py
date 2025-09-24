@@ -121,7 +121,7 @@ if uploaded_file is not None:
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
-            selected_months = st.multiselect("Select Month(s):", month_options)
+            selected_months = st.selectbox("Select Month(s):", month_options)
             submit_month = st.form_submit_button("Filter Month(s)")
 
         if submit_month:
