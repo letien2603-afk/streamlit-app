@@ -178,7 +178,7 @@ if uploaded_file is not None:
 
                 excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
-                    "Download Matched IDs to Excel\n(up to 10,000 records will be exported)",
+                    "Download to Excel\n(up to 10,000 records will be exported)",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
@@ -226,7 +226,7 @@ if uploaded_file is not None:
                 
                 excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
-                    "Download Matched Names/Products to Excel\n(up to 10,0000 records will be exported)",
+                    "Download to Excel\n(up to 10,0000 records will be exported)",
                     excel_data_names,
                     "matched_rows_section2.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
