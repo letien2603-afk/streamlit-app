@@ -172,6 +172,10 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
+                
+                # Limit to 10,000 rows for download
+                df_limited_ids = df_matched_ids.head(10000)
+
                 excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
                     "Download Matched IDs to Excel\n(up to 10,000 records will be exported)",
@@ -216,6 +220,10 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
+                
+                # Limit to 10,000 rows for download
+                df_limited_names = df_matched_names.head(10000)
+                
                 excel_data_names = convert_df_to_excel(df_matched_names)
                 st.download_button(
                     "Download Matched Names/Products to Excel\n(up to 10,0000 records will be exported)",
