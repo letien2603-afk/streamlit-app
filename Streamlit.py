@@ -52,11 +52,14 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     wb = Workbook()
     ws = wb.active
 
-    # Write header
-    ws.append(df.columns.tolist())
+    # Replace None/NaN with empty string and cast to str
+    df_clean = df.fillna("").astype(str).replace("None", "")
 
-    # Write rows as text
-    for row in df.astype(str).to_numpy().tolist():
+    # Write header
+    ws.append(df_clean.columns.tolist())
+
+    # Write rows
+    for row in df_clean.to_numpy().tolist():
         ws.append(row)
 
     # Force text format for all cells
