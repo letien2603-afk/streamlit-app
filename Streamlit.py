@@ -44,15 +44,13 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to CSV (preserve leading 0s)
+# Helper: Convert DataFrame to CSV (preserve leading 0s, no apostrophe)
 # -----------------------------
 def convert_df_to_csv(df: pd.DataFrame) -> bytes:
     # Replace None/NaN with empty string
     df_clean = df.fillna("").astype(str).replace("None", "")
 
-    # Force leading zeros to stay by prefixing with apostrophe
-    df_clean = df_clean.applymap(lambda x: f"'{x}" if x.isdigit() and x.startswith("0") else x)
-
+    # Export to CSV (no apostrophe hack)
     output = StringIO()
     df_clean.to_csv(output, index=False, quoting=1)  # quoting=1 = QUOTE_ALL
     return output.getvalue().encode("utf-8")
