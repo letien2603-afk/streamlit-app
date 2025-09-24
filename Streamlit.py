@@ -94,7 +94,7 @@ if uploaded_file is not None:
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = df_month_filtered.astype(str).to_csv(index=False).encode("utf-8")
+                    csv_data_month = df_month_filtered.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
                         csv_data_month,
@@ -144,7 +144,7 @@ if uploaded_file is not None:
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-                csv_data_ids = df_matched_ids.astype(str).to_csv(index=False).encode("utf-8")
+                csv_data_ids = df_matched_ids.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched IDs to CSV",
                     csv_data_ids,
@@ -188,7 +188,7 @@ if uploaded_file is not None:
             if not df_matched_names.empty:
                 st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
                 st.dataframe(df_matched_names.head(11).reset_index(drop=True))
-                csv_data_names = df_matched_names.astype(str).to_csv(index=False).encode("utf-8")
+                csv_data_names = df_matched_names.astype(str).applymap(lambda x: f"'{x}").to_csv(index=False).encode("utf-8")
                 st.download_button(
                     "Download Matched Names/Products to CSV",
                     csv_data_names,
