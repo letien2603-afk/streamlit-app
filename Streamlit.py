@@ -135,6 +135,11 @@ if uploaded_file is not None:
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
                     # Create in-memory Excel bytes
                     excel_data_month = convert_df_to_excel(df_month_filtered)
+                    
+                    # Always show the download button, even if generating takes time
+                    with st.spinner("Preparing Excel file..."):
+                        excel_data_month = convert_df_to_excel(df_month_filtered)
+                        
                     st.download_button(
                         "Download Month Filtered Rows to Excel",
                         excel_data_month,
