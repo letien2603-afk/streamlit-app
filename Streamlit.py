@@ -3,17 +3,15 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 from openpyxl import Workbook
-from openpyxl.styles import numbers
+from openpyxl.cell import WriteOnlyCell
 
-st.set_page_config(
-    page_title="ATF App",                 
-    layout="wide"                    
-)
+st.set_page_config(page_title="ATF App", layout="wide")
 
 # -----------------------------
 # Hide Streamlit UI elements and remove top padding
 # -----------------------------
-st.markdown("""
+st.markdown(
+    """
 <style>
 /* Hide default Streamlit header/footer */
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
@@ -26,7 +24,9 @@ header {visibility: hidden;}
     padding-bottom: 0rem;
 }
 </style>
-""", unsafe_allow_html=True)
+""",
+    unsafe_allow_html=True,
+)
 
 # -----------------------------
 # Password protection
@@ -46,30 +46,41 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to Excel with all cells as text
+# Helper: Convert DataFrame to Excel fully in-memory (write-only)
 # -----------------------------
 def convert_df_to_excel(df: pd.DataFrame) -> bytes:
-    wb = Workbook()
-    ws = wb.active
-
-    # Replace None/NaN with empty string and cast to str
+    """
+    Convert DataFrame to .xlsx bytes entirely in memory.
+    Uses openpyxl in write-only mode and forces Text format for all cells.
+    Replaces None / NaN with empty string.
+    """
+    # Clean dataframe: replace NaN/None with empty string, cast to str
     df_clean = df.fillna("").astype(str).replace("None", "")
 
-    # Write header
-    ws.append(df_clean.columns.tolist())
+    # Create write-only workbook for memory efficiency
+    wb = Workbook(write_only=True)
+    ws = wb.create_sheet(title="Sheet1")
 
-    # Write rows
-    for row in df_clean.to_numpy().tolist():
-        ws.append(row)
+    # Write header row (plain values)
+    header = list(df_clean.columns)
+    ws.append(header)
 
-    # Force text format for all cells
-    for col in ws.columns:
-        for cell in col:
-            cell.number_format = numbers.FORMAT_TEXT
+    # For each row create WriteOnlyCell and set number_format to text ('@')
+    # This ensures Excel treats the cell as text (preserving leading zeros)
+    for row in df_clean.itertuples(index=False, name=None):
+        write_cells = []
+        for value in row:
+            cell = WriteOnlyCell(ws, value=value)
+            # '@' is the text format in Excel
+            cell.number_format = "@"
+            write_cells.append(cell)
+        ws.append(write_cells)
 
+    # Save workbook to in-memory buffer
     output = BytesIO()
     wb.save(output)
-    return output.getvalue()
+    output.seek(0)
+    return output.read()
 
 # -----------------------------
 # Welcome message with week of month
@@ -88,9 +99,9 @@ st.subheader("Full ATF Access")
 if st.button("Show Google Drive Link for Full ATF"):
     st.markdown(
         '[Click here to access the Full ATF on Google Drive](https://drive.google.com/file/d/13soYzyXK9S8MuAhpPSyDc-o9jNDVuT5X/view?usp=drive_link)',
-        unsafe_allow_html=True
+        unsafe_allow_html=True,
     )
-        
+
 # -----------------------------
 # Upload Parquet file
 # -----------------------------
@@ -122,12 +133,13 @@ if uploaded_file is not None:
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+                    # Create in-memory Excel bytes
                     excel_data_month = convert_df_to_excel(df_month_filtered)
                     st.download_button(
                         "Download Month Filtered Rows to Excel",
                         excel_data_month,
                         "matched_rows_month.xlsx",
-                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                     )
                 else:
                     st.warning("No matching rows found for the selected Month(s).")
@@ -135,7 +147,7 @@ if uploaded_file is not None:
                 st.warning("Please select at least one Month before clicking Filter.")
     else:
         st.warning("No 'Month' column found in the uploaded file.")
-        
+
     # -----------------------------
     # Section 1: Filter by IDs
     # -----------------------------
@@ -157,12 +169,15 @@ if uploaded_file is not None:
                 "PO Number",
                 "GA24: Distribution Sold to System Integrator ID",
                 "Billing Customer ID",
-                "Other Customer ID"
+                "Other Customer ID",
             ]
+            # Ensure columns exist and are string for searching
             for col in filter_cols_ids:
                 if col in df.columns:
+                    # Keep original df untouched beyond casting for search
                     df[col] = df[col].astype(str)
 
+            # Build mask
             mask_ids = df[filter_cols_ids].apply(
                 lambda col: col.str.contains("|".join(search_terms_ids), case=False, na=False)
             ).any(axis=1)
@@ -177,7 +192,7 @@ if uploaded_file is not None:
                     "Download Matched IDs to Excel",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             else:
                 st.warning("No matching rows found in Section 1.")
@@ -201,7 +216,7 @@ if uploaded_file is not None:
                 "GA25: Distribution Sold to System Integrator Name",
                 "Billing Company",
                 "Other Company",
-                "Product ID"
+                "Product ID",
             ]
             for col in filter_cols_names:
                 if col in df.columns:
@@ -221,7 +236,7 @@ if uploaded_file is not None:
                     "Download Matched Names/Products to Excel",
                     excel_data_names,
                     "matched_rows_section2.xlsx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
                 )
             else:
                 st.warning("No matching rows found in Section 2.")
