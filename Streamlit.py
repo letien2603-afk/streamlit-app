@@ -91,7 +91,7 @@ if uploaded_file is not None:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
 
-# -----------------------------
+    # -----------------------------
     # Section: Month Slicer (independent filter)
     # -----------------------------
     st.subheader("Filter by Month")
@@ -99,26 +99,28 @@ if uploaded_file is not None:
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
-            selected_months = st.multiselect("Select Month(s):", month_options)
-            submit_month = st.form_submit_button("Filter Month(s)")
+            selected_month = st.selectbox("Select Month:", month_options)
+            submit_month = st.form_submit_button("Filter Month")
 
         if submit_month:
-            if selected_months:
-                df_month_filtered = df[df["Month"].isin(selected_months)]
+            if selected_month:
+                df_month_filtered = df[df["Month"] == selected_month]
                 if not df_month_filtered.empty:
-                    st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+                    st.success(f"Found {len(df_month_filtered)} rows for selected Month: {selected_month}.")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+
+                    # 🔹 Keep as CSV or switch to XLSX if you prefer
                     csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
                         csv_data_month,
-                        "matched_rows_month.csv",
+                        f"matched_rows_month_{selected_month}.csv",
                         "text/csv"
                     )
                 else:
-                    st.warning("No matching rows found for the selected Month(s).")
+                    st.warning("No matching rows found for the selected Month.")
             else:
-                st.warning("Please select at least one Month before clicking Filter.")
+                st.warning("Please select a Month before clicking Filter.")
     else:
         st.warning("No 'Month' column found in the uploaded file.")
 
