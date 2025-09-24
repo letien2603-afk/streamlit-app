@@ -91,10 +91,11 @@ if uploaded_file is not None:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
 
-    # -----------------------------
-    # Section: Month Slicer (CSV)
-    # -----------------------------
+# -----------------------------
+# Section: Month Slicer (independent filter)
+# -----------------------------
     st.subheader("Filter by Month")
+    df_month_filtered = pd.DataFrame()  # placeholder for results
     if "Month" in df.columns:
         with st.form("form_month"):
             month_options = sorted(df["Month"].dropna().unique())
@@ -107,7 +108,7 @@ if uploaded_file is not None:
                 if not df_month_filtered.empty:
                     st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
                     st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = df_to_csv_bytes(df_month_filtered)
+                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
                     st.download_button(
                         "Download Month Filtered Rows to CSV",
                         csv_data_month,
