@@ -2,17 +2,26 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
+from openpyxl import Workbook
+from openpyxl.styles import numbers
+import gc
 
-st.set_page_config(page_title="ATF App", layout="wide")
+st.set_page_config(
+    page_title="ATF App",
+    layout="wide"
+)
 
 # -----------------------------
 # Hide Streamlit UI elements and remove top padding
 # -----------------------------
 st.markdown("""
 <style>
+/* Hide default Streamlit header/footer */
 footer[data-testid="stAppFooter"] {visibility: hidden; height:0px;}
 #MainMenu {visibility: hidden;}
 header {visibility: hidden;}
+
+/* Remove top padding / margin */
 .block-container {
     padding-top: 0rem;
     padding-bottom: 0rem;
@@ -38,7 +47,7 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to Excel using xlsxwriter
+# Helper: Convert DataFrame to Excel with all cells as text
 # -----------------------------
 @st.cache_data(ttl=600)
 def convert_df_to_excel(df: pd.DataFrame) -> bytes:
@@ -46,21 +55,14 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
         df.to_excel(writer, index=False, sheet_name='Sheet1')
     return output.getvalue()
-
 # -----------------------------
-# Helper: Load Parquet file
-# -----------------------------
-@st.cache_data(ttl=600)
-def load_parquet(file) -> pd.DataFrame:
-    return pd.read_parquet(file, engine="pyarrow")
-
-# -----------------------------
-# Welcome message
+# Welcome message with week of month
 # -----------------------------
 today = datetime.today()
 first_day = today.replace(day=1)
 week_of_month = (today.day + first_day.weekday()) // 7 + 1
 month_name = today.strftime("%B")
+
 st.success(f"Welcome to the ATF file - **Week {week_of_month} of {month_name}**.")
 
 # -----------------------------
@@ -80,12 +82,51 @@ uploaded_file = st.file_uploader("Upload the ATF Parquet file", type=["parquet"]
 
 if uploaded_file is not None:
     try:
-        df = load_parquet(uploaded_file)
+        parquet_bytes = BytesIO(uploaded_file.read())
+        df = pd.read_parquet(parquet_bytes, engine="pyarrow")
         st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
+
+        # Free memory from uploaded file object
+        parquet_bytes.close()
+        del parquet_bytes
+        del uploaded_file
+        gc.collect()
+
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
 
+# -----------------------------
+# Section: Month Slicer
+# -----------------------------
+#    st.subheader("Filter by Month")
+#    df_month_filtered = pd.DataFrame()  # placeholder for results
+#    if "Month" in df.columns:
+#        with st.form("form_month"):
+#            month_options = sorted(df["Month"].dropna().unique())
+#            selected_month = st.selectbox("Select Month:", month_options)
+#            submit_month = st.form_submit_button("Filter Month")
+
+#        if submit_month:
+#            if selected_month:
+#                df_month_filtered = df[df["Month"] == selected_month]
+#                if not df_month_filtered.empty:
+#                    st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+#                    st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+#                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+#                    st.download_button(
+#                        "Download to CSV",
+#                        csv_data_month,
+#                        "matched_rows_month.csv",
+#                        "text/csv"
+#                    )
+#                else:
+#                    st.warning("No matching rows found for the selected Month(s).")
+#            else:
+#                st.warning("Please select at least one Month before clicking Filter.")
+#    else:
+#        st.warning("No 'Month' column found in the uploaded file.")
+    
     # -----------------------------
     # Section 1: Filter by IDs
     # -----------------------------
@@ -118,20 +159,23 @@ if uploaded_file is not None:
             ).any(axis=1)
 
             df_matched_ids = df[mask_ids]
-
+                
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
 
-                # Limit to 5000 rows for download
-                df_limited_ids = df_matched_ids.head(5000)
-                excel_data_ids = convert_df_to_excel(df_limited_ids)
+                # Limit to 10,000 rows for download
+                df_limited_ids = df_matched_ids.head(10000)
 
+                excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
                     "Download to Excel-XLSX",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+                del df_matched_ids
+                gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
