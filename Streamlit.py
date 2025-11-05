@@ -55,26 +55,23 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     ws = wb.active
     
     # Replace None/NaN with empty string and cast to str
-#    df_clean = df.fillna("").astype(str).replace("None", "")
+    df_clean = df.fillna("").astype(str).replace("None", "")
 
     # Write header
-#    ws.append(df_clean.columns.tolist())
+    ws.append(df_clean.columns.tolist())
 
     # Write rows
-#    for row in df_clean.to_numpy().tolist():
-#        ws.append(row)
+    for row in df_clean.to_numpy().tolist():
+        ws.append(row)
 
     # Force text format for all cells
-#    for col in ws.columns:
-#        for cell in col:
-#            cell.number_format = numbers.FORMAT_TEXT
+    for col in ws.columns:
+        for cell in col:
+            cell.number_format = numbers.FORMAT_TEXT
 
     output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Filtered Data')
+    wb.save(output)
     return output.getvalue()
-#    wb.save(output)
-#    return output.getvalue()
 
 # -----------------------------
 # Welcome message with week of month
