@@ -5,7 +5,9 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import numbers
 import gc
+import sys
 
+try:
 st.set_page_config(
     page_title="ATF App",
     layout="wide"
@@ -242,6 +244,11 @@ if uploaded_file is not None:
 #                    "matched_rows_section2.xlsx",
 #                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
 #                )
+
+
+except Exception as e:
+    st.error(f"Critical error occurred: {e}")
+    sys.exit(1)  # Exit so the watchdog can restart
 
 #                del df_matched_names
 #                gc.collect()
