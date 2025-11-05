@@ -57,11 +57,11 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     df_clean = df.fillna("").astype(str).replace("None", "")
 
     # Write header
-#    ws.append(df_clean.columns.tolist())
+    ws.append(df_clean.columns.tolist())
 
     # Write rows
-#    for row in df_clean.to_numpy().tolist():
-#        ws.append(row)
+    for row in df_clean.to_numpy().tolist():
+        ws.append(row)
 
     # Force text format for all cells
     for col in ws.columns:
@@ -182,7 +182,7 @@ if uploaded_file is not None:
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
 
                 # Limit to 10,000 rows for download
-                #df_limited_ids = df_matched_ids.head(10000)
+                df_limited_ids = df_matched_ids.head(10000)
 
                 excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
