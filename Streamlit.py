@@ -81,10 +81,12 @@ if uploaded_file is not None and "df" not in st.session_state:
         st.stop()
 
 # -----------------------------
-# Section 1: Filter by IDs
+# Filtering Sections
 # -----------------------------
 if "df" in st.session_state:
     df = st.session_state.df
+
+    # Section 1: Filter by IDs
     st.subheader("Filter IDs")
     with st.form("form_ids"):
         search_input_ids = st.text_input(
@@ -115,27 +117,22 @@ if "df" in st.session_state:
 
             st.session_state.df_matched_ids = df[mask_ids]
 
-# -----------------------------
-# Display and Download Section 1 Results
-# -----------------------------
-if "df_matched_ids" in st.session_state and not st.session_state.df_matched_ids.empty:
-    df_matched_ids = st.session_state.df_matched_ids
-    st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
-    st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
+    if "df_matched_ids" in st.session_state and not st.session_state.df_matched_ids.empty:
+        df_matched_ids = st.session_state.df_matched_ids
+        st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
+        st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
 
-    df_limited_ids = df_matched_ids.head(10000)
-    excel_data_ids = convert_df_to_excel(df_limited_ids)
+        df_limited_ids = df_matched_ids.head(10000)
+        excel_data_ids = convert_df_to_excel(df_limited_ids)
 
-    st.download_button(
-        "Download to Excel-XLSX",
-        excel_data_ids,
-        "matched_rows_section1.xlsx",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            "Download to Excel-XLSX",
+            excel_data_ids,
+            "matched_rows_section1.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
 
-# -----------------------------
-# Section 2: Filter Names / Products
-# -----------------------------
+    # Section 2: Filter Names / Products
     st.subheader("Filter Names / Products")
     with st.form("form_names"):
         search_input_names = st.text_input(
@@ -164,20 +161,17 @@ if "df_matched_ids" in st.session_state and not st.session_state.df_matched_ids.
 
             st.session_state.df_matched_names = df[mask_names]
 
-# -----------------------------
-# Display and Download Section 2 Results
-# -----------------------------
-if "df_matched_names" in st.session_state and not st.session_state.df_matched_names.empty:
-    df_matched_names = st.session_state.df_matched_names
-    st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
-    st.dataframe(df_matched_names.head(11).reset_index(drop=True))
+    if "df_matched_names" in st.session_state and not st.session_state.df_matched_names.empty:
+        df_matched_names = st.session_state.df_matched_names
+        st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
+        st.dataframe(df_matched_names.head(11).reset_index(drop=True))
 
-    df_limited_names = df_matched_names.head(10000)
-    excel_data_names = convert_df_to_excel(df_limited_names)
+        df_limited_names = df_matched_names.head(10000)
+        excel_data_names = convert_df_to_excel(df_limited_names)
 
-    st.download_button(
-        "Download Matched Names/Products to Excel",
-        excel_data_names,
-        "matched_rows_section2.xlsx",
-        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-    )
+        st.download_button(
+            "Download Matched Names/Products to Excel",
+            excel_data_names,
+            "matched_rows_section2.xlsx",
+            "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+        )
