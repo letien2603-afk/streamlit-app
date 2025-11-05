@@ -58,11 +58,11 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
     df_clean = df.fillna("").astype(str).replace("None", "")
 
     # Write header
-    ws.append(df_clean.columns.tolist())
+#    ws.append(df_clean.columns.tolist())
 
     # Write rows
-    for row in df_clean.to_numpy().tolist():
-        ws.append(row)
+#    for row in df_clean.to_numpy().tolist():
+#        ws.append(row)
 
     # Force text format for all cells
     for col in ws.columns:
@@ -70,7 +70,7 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
             cell.number_format = numbers.FORMAT_TEXT
 
     output = BytesIO()
-    wb.save(output)
+#    wb.save(output)
     return output.getvalue()
 
 # -----------------------------
@@ -194,7 +194,7 @@ if uploaded_file is not None:
                 )
 
                 del df_matched_ids
-                gc.collect()
+            #    gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
 
