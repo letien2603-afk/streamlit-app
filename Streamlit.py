@@ -3,10 +3,6 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 
-st.write("Max upload size (MB):", get_option("server.maxUploadSize"))
-st.write("Max message size (MB):", get_option("server.maxMessageSize"))
-
-
 st.set_page_config(page_title="ATF App", layout="wide")
 
 # -----------------------------
