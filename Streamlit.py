@@ -176,39 +176,26 @@ if uploaded_file is not None:
             ).any(axis=1)
 
             df_matched_ids = df[mask_ids]
-
+                
             if not df_matched_ids.empty:
                 st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
                 st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
+
+                # Limit to 10,000 rows for download
+                df_limited_ids = df_matched_ids.head(10000)
+
                 excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
-                    "Download Matched IDs to Excel",
+                    "Download to Excel-XLSX",
                     excel_data_ids,
                     "matched_rows_section1.xlsx",
                     "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
                 )
+
+                del df_matched_ids
+                gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
-                
-            #if not df_matched_ids.empty:
-            #    st.success(f"Found {len(df_matched_ids)} matching rows for Section 1.")
-            #    st.dataframe(df_matched_ids.head(11).reset_index(drop=True))
-
-                # Limit to 10,000 rows for download
-            #    df_limited_ids = df_matched_ids.head(10000)
-
-            #    excel_data_ids = convert_df_to_excel(df_matched_ids)
-            #    st.download_button(
-            #        "Download to Excel-XLSX",
-            #        excel_data_ids,
-            #        "matched_rows_section1.xlsx",
-            #        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-            #    )
-
-            #    del df_matched_ids
-            #    gc.collect()
-            #else:
-            #    st.warning("No matching rows found in Section 1.")
 
     # -----------------------------
     # Section 2: Filter by Names / Products
