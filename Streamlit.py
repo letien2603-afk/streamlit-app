@@ -3,9 +3,6 @@ import pandas as pd
 from io import BytesIO
 from datetime import datetime
 
-import streamlit as st
-from streamlit.runtime.config import get_option
-
 st.write("Max upload size (MB):", get_option("server.maxUploadSize"))
 st.write("Max message size (MB):", get_option("server.maxMessageSize"))
 
