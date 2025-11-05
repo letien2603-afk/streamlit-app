@@ -5,7 +5,6 @@ from datetime import datetime
 from openpyxl import Workbook
 from openpyxl.styles import numbers
 import gc
-import io
 
 st.set_page_config(
     page_title="ATF App",
@@ -70,7 +69,7 @@ def convert_df_to_excel(df: pd.DataFrame) -> bytes:
             cell.number_format = numbers.FORMAT_TEXT
 
     output = BytesIO()
-#    wb.save(output)
+    wb.save(output)
     return output.getvalue()
 
 # -----------------------------
