@@ -213,50 +213,50 @@ if uploaded_file is not None:
     # -----------------------------
     # Section 2: Filter by Names / Products
     # -----------------------------
-    st.subheader("Filter Names / Products")
-    with st.form("form_names"):
-        search_input_names = st.text_input(
-            "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
-        )
-        submit_names = st.form_submit_button("Filter Names/Products")
+#    st.subheader("Filter Names / Products")
+#    with st.form("form_names"):
+#        search_input_names = st.text_input(
+#            "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
+#        )
+#        submit_names = st.form_submit_button("Filter Names/Products")
 
-    if submit_names:
-        if search_input_names.strip() == "":
-            st.warning("Please enter at least one search term for Section 2.")
-        else:
-            search_terms_names = [t.strip() for t in search_input_names.split(",") if t.strip()]
-            filter_cols_names = [
-                "GA25: Distribution Sold to System Integrator Name",
-                "Billing Company",
-                "Other Company",
-                "Product ID"
-            ]
-            for col in filter_cols_names:
-                if col in df.columns:
-                    df[col] = df[col].astype(str)
+#    if submit_names:
+#        if search_input_names.strip() == "":
+#            st.warning("Please enter at least one search term for Section 2.")
+#        else:
+#            search_terms_names = [t.strip() for t in search_input_names.split(",") if t.strip()]
+#            filter_cols_names = [
+#                "GA25: Distribution Sold to System Integrator Name",
+#                "Billing Company",
+#                "Other Company",
+#                "Product ID"
+#            ]
+#            for col in filter_cols_names:
+#                if col in df.columns:
+#                    df[col] = df[col].astype(str)
 
-            mask_names = df[filter_cols_names].apply(
-                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
-            ).any(axis=1)
+#            mask_names = df[filter_cols_names].apply(
+#                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
+#            ).any(axis=1)
 
-            df_matched_names = df[mask_names]
+#            df_matched_names = df[mask_names]
 
-            if not df_matched_names.empty:
-                st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
-                st.dataframe(df_matched_names.head(11).reset_index(drop=True))
+#            if not df_matched_names.empty:
+#                st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
+#                st.dataframe(df_matched_names.head(11).reset_index(drop=True))
 
                 # Limit to 10,000 rows for download
                 #df_limited_names = df_matched_names.head(10000)
 
-                excel_data_names = convert_df_to_excel(df_matched_names)
-                st.download_button(
-                    "Download to Excel-XLSX",
-                    excel_data_names,
-                    "matched_rows_section2.xlsx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+#                excel_data_names = convert_df_to_excel(df_matched_names)
+#                st.download_button(
+#                    "Download to Excel-XLSX",
+#                    excel_data_names,
+#                    "matched_rows_section2.xlsx",
+#                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+#                )
 
-                del df_matched_names
-                gc.collect()
-            else:
-                st.warning("No matching rows found in Section 2.")
+#                del df_matched_names
+#                gc.collect()
+#            else:
+#                st.warning("No matching rows found in Section 2.")
