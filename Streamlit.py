@@ -116,33 +116,33 @@ if uploaded_file is not None:
 # -----------------------------
 # Section: Month Slicer
 # -----------------------------
-    st.subheader("Filter by Month")
-    df_month_filtered = pd.DataFrame()  # placeholder for results
-    if "Month" in df.columns:
-        with st.form("form_month"):
-            month_options = sorted(df["Month"].dropna().unique())
-            selected_month = st.selectbox("Select Month:", month_options)
-            submit_month = st.form_submit_button("Filter Month")
+#    st.subheader("Filter by Month")
+#    df_month_filtered = pd.DataFrame()  # placeholder for results
+#    if "Month" in df.columns:
+#        with st.form("form_month"):
+#            month_options = sorted(df["Month"].dropna().unique())
+#            selected_month = st.selectbox("Select Month:", month_options)
+#            submit_month = st.form_submit_button("Filter Month")
 
-        if submit_month:
-            if selected_month:
-                df_month_filtered = df[df["Month"] == selected_month]
-                if not df_month_filtered.empty:
-                    st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
-                    st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
-                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
-                    st.download_button(
-                        "Download to CSV",
-                        csv_data_month,
-                        "matched_rows_month.csv",
-                        "text/csv"
-                    )
-                else:
-                    st.warning("No matching rows found for the selected Month(s).")
-            else:
-                st.warning("Please select at least one Month before clicking Filter.")
-    else:
-        st.warning("No 'Month' column found in the uploaded file.")
+#        if submit_month:
+#            if selected_month:
+#                df_month_filtered = df[df["Month"] == selected_month]
+#                if not df_month_filtered.empty:
+#                    st.success(f"Found {len(df_month_filtered)} rows for selected Month(s).")
+#                    st.dataframe(df_month_filtered.head(11).reset_index(drop=True))
+#                    csv_data_month = df_month_filtered.to_csv(index=False).encode("utf-8")
+#                    st.download_button(
+#                        "Download to CSV",
+#                        csv_data_month,
+#                        "matched_rows_month.csv",
+#                        "text/csv"
+#                    )
+#                else:
+#                    st.warning("No matching rows found for the selected Month(s).")
+#            else:
+#                st.warning("Please select at least one Month before clicking Filter.")
+#    else:
+#        st.warning("No 'Month' column found in the uploaded file.")
     
     # -----------------------------
     # Section 1: Filter by IDs
