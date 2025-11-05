@@ -116,7 +116,7 @@ if "df" in st.session_state:
             st.session_state.df_matched_ids = df[mask_ids]
 
 # -----------------------------
-# Display and Download Results
+# Display and Download Section 1 Results
 # -----------------------------
 if "df_matched_ids" in st.session_state and not st.session_state.df_matched_ids.empty:
     df_matched_ids = st.session_state.df_matched_ids
@@ -130,5 +130,54 @@ if "df_matched_ids" in st.session_state and not st.session_state.df_matched_ids.
         "Download to Excel-XLSX",
         excel_data_ids,
         "matched_rows_section1.xlsx",
+        "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
+    )
+
+# -----------------------------
+# Section 2: Filter Names / Products
+# -----------------------------
+    st.subheader("Filter Names / Products")
+    with st.form("form_names"):
+        search_input_names = st.text_input(
+            "Enter GA25: Distribution Sold to System Integrator Name, Billing Company, Other Company, Product ID (comma-separated):"
+        )
+        submit_names = st.form_submit_button("Filter Names/Products")
+
+    if submit_names:
+        if search_input_names.strip() == "":
+            st.warning("Please enter at least one search term for Section 2.")
+        else:
+            search_terms_names = [t.strip() for t in search_input_names.split(",") if t.strip()]
+            filter_cols_names = [
+                "GA25: Distribution Sold to System Integrator Name",
+                "Billing Company",
+                "Other Company",
+                "Product ID"
+            ]
+            for col in filter_cols_names:
+                if col in df.columns:
+                    df[col] = df[col].astype(str)
+
+            mask_names = df[filter_cols_names].apply(
+                lambda col: col.str.contains("|".join(search_terms_names), case=False, na=False)
+            ).any(axis=1)
+
+            st.session_state.df_matched_names = df[mask_names]
+
+# -----------------------------
+# Display and Download Section 2 Results
+# -----------------------------
+if "df_matched_names" in st.session_state and not st.session_state.df_matched_names.empty:
+    df_matched_names = st.session_state.df_matched_names
+    st.success(f"Found {len(df_matched_names)} matching rows for Section 2.")
+    st.dataframe(df_matched_names.head(11).reset_index(drop=True))
+
+    df_limited_names = df_matched_names.head(10000)
+    excel_data_names = convert_df_to_excel(df_limited_names)
+
+    st.download_button(
+        "Download Matched Names/Products to Excel",
+        excel_data_names,
+        "matched_rows_section2.xlsx",
         "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
     )
