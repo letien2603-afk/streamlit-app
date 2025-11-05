@@ -2,7 +2,7 @@ import streamlit as st
 import pandas as pd
 from io import BytesIO
 from datetime import datetime
-import gc
+import os
 
 st.set_page_config(page_title="ATF App", layout="wide")
 
@@ -39,14 +39,14 @@ if not st.session_state.logged_in:
     st.stop()
 
 # -----------------------------
-# Helper: Convert DataFrame to Excel using xlsxwriter
+# Helper: Save Excel to disk
 # -----------------------------
-@st.cache_data(ttl=300)
-def convert_df_to_excel(df: pd.DataFrame) -> bytes:
-    output = BytesIO()
-    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
-        df.to_excel(writer, index=False, sheet_name='Sheet1')
-    return output.getvalue()
+def save_excel_to_disk(df: pd.DataFrame, filename: str) -> str:
+    os.makedirs("temp", exist_ok=True)
+    filepath = os.path.join("temp", filename)
+    with pd.ExcelWriter(filepath, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False)
+    return filepath
 
 # -----------------------------
 # Welcome message
@@ -76,8 +76,6 @@ if uploaded_file is not None:
     try:
         df = pd.read_parquet(uploaded_file, engine="pyarrow")
         st.success(f"Loaded data ({len(df)} rows, {len(df.columns)} columns).")
-        del uploaded_file
-        gc.collect()
     except Exception as e:
         st.error(f"Error loading Parquet file: {e}")
         st.stop()
@@ -121,16 +119,9 @@ if uploaded_file is not None:
 
                 # Limit to 5000 rows for download
                 df_limited_ids = df_matched_ids.head(5000)
-                excel_data_ids = convert_df_to_excel(df_limited_ids)
+                file_path = save_excel_to_disk(df_limited_ids, "matched_rows_section1.xlsx")
 
-                st.download_button(
-                    "Download to Excel-XLSX",
-                    excel_data_ids,
-                    "matched_rows_section1.xlsx",
-                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"
-                )
+                st.markdown(f"[Download Excel file]({file_path})")
 
-                del df_matched_ids
-                gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
