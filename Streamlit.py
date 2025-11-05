@@ -49,10 +49,10 @@ if not st.session_state.logged_in:
 # -----------------------------
 # Helper: Convert DataFrame to Excel with all cells as text
 # -----------------------------
-#def convert_df_to_excel(df: pd.DataFrame) -> bytes:
-#    wb = Workbook()
-#    ws = wb.active
-
+def convert_df_to_excel(df: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
+    
     # Replace None/NaN with empty string and cast to str
 #    df_clean = df.fillna("").astype(str).replace("None", "")
 
@@ -68,7 +68,10 @@ if not st.session_state.logged_in:
 #        for cell in col:
 #            cell.number_format = numbers.FORMAT_TEXT
 
-#    output = BytesIO()
+    output = BytesIO()
+    with pd.ExcelWriter(output, engine='xlsxwriter') as writer:
+        df.to_excel(writer, index=False, sheet_name='Filtered Data')
+    return output.getvalue()
 #    wb.save(output)
 #    return output.getvalue()
 
@@ -184,8 +187,7 @@ if uploaded_file is not None:
                 # Limit to 10,000 rows for download
                 #df_limited_ids = df_matched_ids.head(10000)
 
-                excel_data_ids = df_matched_ids
-                #convert_df_to_excel(df_matched_ids)
+                excel_data_ids = convert_df_to_excel(df_matched_ids)
                 st.download_button(
                     "Download to Excel-XLSX",
                     excel_data_ids,
