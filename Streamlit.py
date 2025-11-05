@@ -49,9 +49,9 @@ if not st.session_state.logged_in:
 # -----------------------------
 # Helper: Convert DataFrame to Excel with all cells as text
 # -----------------------------
-#def convert_df_to_excel(df: pd.DataFrame) -> bytes:
-#    wb = Workbook()
-#    ws = wb.active
+def convert_df_to_excel(df: pd.DataFrame) -> bytes:
+    wb = Workbook()
+    ws = wb.active
 
     # Replace None/NaN with empty string and cast to str
 #    df_clean = df.fillna("").astype(str).replace("None", "")
@@ -64,13 +64,13 @@ if not st.session_state.logged_in:
 #        ws.append(row)
 
     # Force text format for all cells
-#    for col in ws.columns:
-#        for cell in col:
-#            cell.number_format = numbers.FORMAT_TEXT
+    for col in ws.columns:
+        for cell in col:
+            cell.number_format = numbers.FORMAT_TEXT
 
-#    output = BytesIO()
-#    wb.save(output)
-#    return output.getvalue()
+    output = BytesIO()
+    wb.save(output)
+    return output.getvalue()
 
 # -----------------------------
 # Welcome message with week of month
