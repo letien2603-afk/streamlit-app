@@ -193,7 +193,7 @@ if uploaded_file is not None:
                 )
 
                 del df_matched_ids
-            #    gc.collect()
+                gc.collect()
             else:
                 st.warning("No matching rows found in Section 1.")
 
